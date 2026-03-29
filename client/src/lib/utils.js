@@ -25,13 +25,13 @@ export const STATUS_LABELS = {
 };
 
 export const STATUS_COLORS = {
-  draft: 'bg-gray-100 text-gray-700',
-  submitted: 'bg-blue-100 text-blue-700',
-  manager_review: 'bg-yellow-100 text-yellow-700',
-  approved: 'bg-green-100 text-green-700',
-  audit: 'bg-purple-100 text-purple-700',
-  processing: 'bg-orange-100 text-orange-700',
-  exported: 'bg-emerald-100 text-emerald-700',
+  draft:          'bg-gray-100 text-gray-600',
+  submitted:      'bg-blue-50 text-blue-700',
+  manager_review: 'bg-amber-50 text-amber-700',
+  approved:       'bg-green-50 text-green-700',
+  audit:          'bg-purple-50 text-purple-700',
+  processing:     'bg-orange-50 text-orange-700',
+  exported:       'bg-teal-50 text-teal-700',
 };
 
 export const STATUS_STEPS = [

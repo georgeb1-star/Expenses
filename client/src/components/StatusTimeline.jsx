@@ -1,45 +1,57 @@
 import React from 'react';
 import { cn, STATUS_STEPS, STATUS_LABELS } from '../lib/utils';
-import { CheckCircle2, Circle, Clock } from 'lucide-react';
+import { Check } from 'lucide-react';
 
 export function StatusTimeline({ status }) {
   const currentIdx = STATUS_STEPS.indexOf(status);
 
   return (
     <div className="w-full overflow-x-auto">
-      <div className="flex items-center min-w-max py-2">
+      <div className="flex items-center min-w-max">
         {STATUS_STEPS.map((step, i) => {
           const done = i < currentIdx;
           const active = i === currentIdx;
-          const upcoming = i > currentIdx;
 
           return (
             <React.Fragment key={step}>
-              <div className="flex flex-col items-center">
-                <div className={cn(
-                  'flex items-center justify-center w-8 h-8 rounded-full',
-                  done && 'bg-green-500 text-white',
-                  active && 'bg-primary text-white',
-                  upcoming && 'bg-gray-200 text-gray-400'
-                )}>
-                  {done ? <CheckCircle2 className="w-5 h-5" /> :
-                   active ? <Clock className="w-5 h-5" /> :
-                   <Circle className="w-5 h-5" />}
+              {/* Step node */}
+              <div className="flex flex-col items-center gap-1.5">
+                <div
+                  className={cn(
+                    'flex items-center justify-center w-7 h-7 rounded-full border-2 transition-colors',
+                    done && 'bg-green-500 border-green-500',
+                    active && 'bg-blue-600 border-blue-600',
+                    !done && !active && 'bg-white border-gray-300'
+                  )}
+                >
+                  {done ? (
+                    <Check className="w-3.5 h-3.5 text-white" strokeWidth={2.5} />
+                  ) : active ? (
+                    <span className="w-2 h-2 rounded-full bg-white" />
+                  ) : (
+                    <span className="w-2 h-2 rounded-full bg-gray-300" />
+                  )}
                 </div>
-                <span className={cn(
-                  'mt-1 text-xs whitespace-nowrap',
-                  done && 'text-green-600 font-medium',
-                  active && 'text-primary font-semibold',
-                  upcoming && 'text-gray-400'
-                )}>
+                <span
+                  className={cn(
+                    'text-[11px] whitespace-nowrap font-medium',
+                    done && 'text-green-600',
+                    active && 'text-blue-700',
+                    !done && !active && 'text-gray-400'
+                  )}
+                >
                   {STATUS_LABELS[step]}
                 </span>
               </div>
+
+              {/* Connector line */}
               {i < STATUS_STEPS.length - 1 && (
-                <div className={cn(
-                  'h-0.5 w-12 mx-1 mb-4',
-                  i < currentIdx ? 'bg-green-500' : 'bg-gray-200'
-                )} />
+                <div
+                  className={cn(
+                    'h-0.5 w-10 mx-1 mb-5 flex-shrink-0',
+                    i < currentIdx ? 'bg-green-400' : 'bg-gray-200'
+                  )}
+                />
               )}
             </React.Fragment>
           );

@@ -9,7 +9,7 @@ import { StatusBadge } from '../../components/StatusBadge';
 import { StatusTimeline } from '../../components/StatusTimeline';
 import { ItemForm } from './ItemForm';
 import { formatCurrency, formatDate } from '../../lib/utils';
-import { AlertCircle, AlertTriangle, Plus, Trash2, Upload, Eye, MessageSquare, CheckCircle2 } from 'lucide-react';
+import { AlertCircle, AlertTriangle, Plus, Trash2, Upload, MessageSquare, CheckCircle2, ArrowLeft } from 'lucide-react';
 
 const TABS = ['Details', 'Alerts', 'Comments', 'Receipts'];
 
@@ -63,7 +63,7 @@ export default function ClaimDetail() {
   };
 
   const handleAction = async (action, requireComment = false) => {
-    if (requireComment && !actionComment.trim()) { setError('A comment is required'); return; }
+    if (requireComment && !actionComment.trim()) { setError('A comment is required for this action.'); return; }
     setActionLoading(true);
     setError('');
     try {
@@ -86,7 +86,7 @@ export default function ClaimDetail() {
   };
 
   const handleDelete = async () => {
-    if (!confirm('Delete this claim?')) return;
+    if (!confirm('Permanently delete this claim? This cannot be undone.')) return;
     await claimsApi.delete(id);
     navigate('/claims');
   };
@@ -102,176 +102,348 @@ export default function ClaimDetail() {
   };
 
   const handleDeleteItem = async (itemId) => {
-    if (!confirm('Remove this item?')) return;
+    if (!confirm('Remove this expense item?')) return;
     await itemsApi.delete(id, itemId);
     await load();
   };
 
-  if (loading) return <div className="flex items-center justify-center h-64"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" /></div>;
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <div className="animate-spin rounded-full h-6 w-6 border-2 border-gray-300 border-t-blue-600" />
+      </div>
+    );
+  }
 
   const unresolvedErrors = alerts.filter((a) => !a.resolved && a.severity === 'error');
   const unresolvedWarnings = alerts.filter((a) => !a.resolved && a.severity === 'warning');
-
-  // All receipts across items
   const allItems = claim.items || [];
+  const totalAmount = allItems.reduce(
+    (sum, item) => sum + parseFloat(item.type === 'mileage' ? item.reimbursement_amount || 0 : item.amount || 0),
+    0
+  );
+  const activeAlertCount = alerts.filter((a) => !a.resolved).length;
 
   return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div className="flex items-start justify-between">
+    <div className="space-y-5">
+      {/* Back link */}
+      <button
+        onClick={() => navigate(-1)}
+        className="inline-flex items-center gap-1.5 text-xs text-gray-500 hover:text-gray-700 transition-colors"
+      >
+        <ArrowLeft className="w-3.5 h-3.5" />
+        Back
+      </button>
+
+      {/* Page header */}
+      <div className="flex items-start justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold">{claim.title}</h1>
-          <div className="flex items-center gap-3 mt-1 text-sm text-muted-foreground">
-            <span>{claim.owner_name}</span>
-            <span>·</span>
-            <span>{claim.owner_department}</span>
-            <span>·</span>
-            <span>Created {formatDate(claim.created_at)}</span>
+          <div className="flex items-center gap-3">
+            <h1 className="text-xl font-semibold text-gray-900">{claim.title}</h1>
+            <StatusBadge status={claim.status} />
           </div>
+          <p className="text-sm text-gray-500 mt-1">
+            {claim.owner_name}
+            {claim.owner_department && <span> · {claim.owner_department}</span>}
+            <span> · Created {formatDate(claim.created_at)}</span>
+          </p>
         </div>
-        <div className="flex items-center gap-2">
-          <StatusBadge status={claim.status} />
+        <div className="flex items-center gap-2 flex-shrink-0">
           {canEdit && (
-            <Button variant="destructive" size="sm" onClick={handleDelete}><Trash2 className="w-4 h-4" /></Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleDelete}
+              className="text-red-600 border-red-200 hover:bg-red-50 hover:border-red-300"
+            >
+              <Trash2 className="w-3.5 h-3.5 mr-1.5" />
+              Delete
+            </Button>
           )}
         </div>
       </div>
 
-      {/* Timeline */}
-      <Card><CardContent className="p-4"><StatusTimeline status={claim.status} /></CardContent></Card>
+      {/* Status timeline */}
+      <Card>
+        <CardContent className="py-4">
+          <StatusTimeline status={claim.status} />
+        </CardContent>
+      </Card>
 
-      {/* Alert summary */}
+      {/* Alert summary banners */}
       {(unresolvedErrors.length > 0 || unresolvedWarnings.length > 0) && (
-        <div className="flex gap-3">
+        <div className="flex gap-2">
           {unresolvedErrors.length > 0 && (
-            <button onClick={() => setTab('Alerts')} className="flex items-center gap-2 px-3 py-2 bg-red-50 border border-red-200 rounded-md text-sm text-red-700 hover:bg-red-100">
-              <AlertCircle className="w-4 h-4" /> {unresolvedErrors.length} error{unresolvedErrors.length > 1 ? 's' : ''}
+            <button
+              onClick={() => setTab('Alerts')}
+              className="flex items-center gap-2 px-3 py-2 bg-red-50 border border-red-200 rounded text-sm text-red-700 hover:bg-red-100 transition-colors"
+            >
+              <AlertCircle className="w-3.5 h-3.5" />
+              {unresolvedErrors.length} unresolved error{unresolvedErrors.length > 1 ? 's' : ''}
             </button>
           )}
           {unresolvedWarnings.length > 0 && (
-            <button onClick={() => setTab('Alerts')} className="flex items-center gap-2 px-3 py-2 bg-yellow-50 border border-yellow-200 rounded-md text-sm text-yellow-700 hover:bg-yellow-100">
-              <AlertTriangle className="w-4 h-4" /> {unresolvedWarnings.length} warning{unresolvedWarnings.length > 1 ? 's' : ''}
+            <button
+              onClick={() => setTab('Alerts')}
+              className="flex items-center gap-2 px-3 py-2 bg-amber-50 border border-amber-200 rounded text-sm text-amber-700 hover:bg-amber-100 transition-colors"
+            >
+              <AlertTriangle className="w-3.5 h-3.5" />
+              {unresolvedWarnings.length} warning{unresolvedWarnings.length > 1 ? 's' : ''}
             </button>
           )}
         </div>
       )}
 
-      {error && <p className="text-sm text-destructive bg-destructive/10 p-3 rounded-md">{error}</p>}
-
-      {/* Action area */}
-      {(claim.status === 'manager_review' && ['manager', 'admin'].includes(user.role)) && (
-        <Card><CardContent className="p-4 space-y-3">
-          <p className="font-medium text-sm">Manager Action</p>
-          <Textarea value={actionComment} onChange={(e) => setActionComment(e.target.value)} placeholder="Add a comment (required to reject)…" rows={2} />
-          <div className="flex gap-2">
-            <Button onClick={() => handleAction(() => claimsApi.approve(id, { comment: actionComment }))} disabled={actionLoading}>Approve</Button>
-            <Button variant="destructive" onClick={() => handleAction(() => claimsApi.reject(id, { comment: actionComment }), true)} disabled={actionLoading}>Send Back</Button>
-          </div>
-        </CardContent></Card>
+      {/* Global error message */}
+      {error && (
+        <div className="flex items-start gap-2 text-sm text-red-700 bg-red-50 border border-red-200 px-4 py-3 rounded">
+          <AlertCircle className="w-4 h-4 flex-shrink-0 mt-0.5" />
+          {error}
+        </div>
       )}
 
-      {(claim.status === 'audit' && ['processor', 'admin'].includes(user.role)) && (
-        <Card><CardContent className="p-4 space-y-3">
-          <p className="font-medium text-sm">Finance / Audit Action</p>
-          <Textarea value={actionComment} onChange={(e) => setActionComment(e.target.value)} placeholder="Add a comment (required to reject)…" rows={2} />
-          <div className="flex gap-2">
-            <Button onClick={() => handleAction(() => claimsApi.auditApprove(id, { comment: actionComment }))} disabled={actionLoading}>Pass Audit</Button>
-            <Button variant="destructive" onClick={() => handleAction(() => claimsApi.auditReject(id, { comment: actionComment }), true)} disabled={actionLoading}>Fail Audit</Button>
-          </div>
-        </CardContent></Card>
+      {/* Manager approval action panel */}
+      {claim.status === 'manager_review' && ['manager', 'admin'].includes(user.role) && (
+        <Card>
+          <CardHeader>
+            <CardTitle>Manager Review</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className="text-sm text-gray-600 mb-3">
+              Review the claim details before approving or sending back to the employee.
+              A comment is required when sending back.
+            </p>
+            <Textarea
+              value={actionComment}
+              onChange={(e) => setActionComment(e.target.value)}
+              placeholder="Add a comment (required when sending back)…"
+              rows={2}
+              className="mb-3"
+            />
+            <div className="flex gap-2">
+              <Button
+                size="sm"
+                onClick={() => handleAction(() => claimsApi.approve(id, { comment: actionComment }))}
+                disabled={actionLoading}
+              >
+                Approve Claim
+              </Button>
+              <Button
+                size="sm"
+                variant="outline"
+                className="text-red-600 border-red-200 hover:bg-red-50"
+                onClick={() => handleAction(() => claimsApi.reject(id, { comment: actionComment }), true)}
+                disabled={actionLoading}
+              >
+                Send Back to Employee
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
       )}
 
-      {/* Tabs */}
+      {/* Finance / audit action panel */}
+      {claim.status === 'audit' && ['processor', 'admin'].includes(user.role) && (
+        <Card>
+          <CardHeader>
+            <CardTitle>Finance Audit</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className="text-sm text-gray-600 mb-3">
+              Review receipts and compliance before passing or failing this audit.
+              A comment is required when failing.
+            </p>
+            <Textarea
+              value={actionComment}
+              onChange={(e) => setActionComment(e.target.value)}
+              placeholder="Add a comment (required when failing)…"
+              rows={2}
+              className="mb-3"
+            />
+            <div className="flex gap-2">
+              <Button
+                size="sm"
+                onClick={() => handleAction(() => claimsApi.auditApprove(id, { comment: actionComment }))}
+                disabled={actionLoading}
+              >
+                Pass Audit
+              </Button>
+              <Button
+                size="sm"
+                variant="outline"
+                className="text-red-600 border-red-200 hover:bg-red-50"
+                onClick={() => handleAction(() => claimsApi.auditReject(id, { comment: actionComment }), true)}
+                disabled={actionLoading}
+              >
+                Fail Audit
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Main content tabs */}
       <Card>
-        <div className="border-b px-6">
-          <div className="flex gap-6">
-            {TABS.map((t) => (
-              <button key={t} onClick={() => setTab(t)}
-                className={`py-3 text-sm font-medium border-b-2 transition-colors ${tab === t ? 'border-primary text-primary' : 'border-transparent text-muted-foreground hover:text-foreground'}`}>
-                {t}
-                {t === 'Alerts' && alerts.filter(a => !a.resolved).length > 0 && (
-                  <span className="ml-1.5 bg-red-500 text-white text-xs rounded-full px-1.5">{alerts.filter(a => !a.resolved).length}</span>
-                )}
-                {t === 'Comments' && comments.length > 0 && (
-                  <span className="ml-1.5 text-xs text-muted-foreground">({comments.length})</span>
-                )}
-              </button>
-            ))}
-          </div>
+        {/* Tab bar */}
+        <div className="flex border-b border-gray-200 px-5">
+          {TABS.map((t) => (
+            <button
+              key={t}
+              onClick={() => setTab(t)}
+              className={`relative py-3 mr-6 text-sm font-medium border-b-2 transition-colors ${
+                tab === t
+                  ? 'border-blue-600 text-blue-700'
+                  : 'border-transparent text-gray-500 hover:text-gray-700'
+              }`}
+            >
+              {t}
+              {t === 'Alerts' && activeAlertCount > 0 && (
+                <span className="ml-1.5 inline-flex items-center justify-center w-4 h-4 bg-red-600 text-white text-[10px] font-semibold rounded-full">
+                  {activeAlertCount}
+                </span>
+              )}
+              {t === 'Comments' && comments.length > 0 && (
+                <span className="ml-1.5 text-xs text-gray-400 font-normal">({comments.length})</span>
+              )}
+            </button>
+          ))}
         </div>
 
-        <CardContent className="p-6">
+        <CardContent>
           {/* Details Tab */}
           {tab === 'Details' && (
             <div className="space-y-4">
-              {canEdit && !showItemForm && (
-                <Button variant="outline" size="sm" onClick={() => setShowItemForm(true)}>
-                  <Plus className="w-4 h-4 mr-2" /> Add Item
-                </Button>
+              {canEdit && !showItemForm && !editingItem && (
+                <div>
+                  <Button variant="outline" size="sm" onClick={() => setShowItemForm(true)}>
+                    <Plus className="w-3.5 h-3.5 mr-1.5" />
+                    Add Expense Item
+                  </Button>
+                </div>
               )}
+
               {showItemForm && (
-                <div className="border rounded-md p-4">
-                  <h3 className="font-medium mb-4">New Item</h3>
-                  <ItemForm claimId={id} onSave={() => { setShowItemForm(false); load(); }} onCancel={() => setShowItemForm(false)} />
+                <div className="border border-gray-200 rounded p-5 bg-gray-50">
+                  <h3 className="text-sm font-semibold text-gray-900 mb-4">New Expense Item</h3>
+                  <ItemForm
+                    claimId={id}
+                    onSave={() => { setShowItemForm(false); load(); }}
+                    onCancel={() => setShowItemForm(false)}
+                  />
                 </div>
               )}
+
               {editingItem && (
-                <div className="border rounded-md p-4">
-                  <h3 className="font-medium mb-4">Edit Item</h3>
-                  <ItemForm claimId={id} item={editingItem} onSave={() => { setEditingItem(null); load(); }} onCancel={() => setEditingItem(null)} />
+                <div className="border border-gray-200 rounded p-5 bg-gray-50">
+                  <h3 className="text-sm font-semibold text-gray-900 mb-4">Edit Expense Item</h3>
+                  <ItemForm
+                    claimId={id}
+                    item={editingItem}
+                    onSave={() => { setEditingItem(null); load(); }}
+                    onCancel={() => setEditingItem(null)}
+                  />
                 </div>
               )}
+
               {allItems.length === 0 ? (
-                <p className="text-muted-foreground text-sm">No items yet.</p>
+                <p className="text-sm text-gray-500 py-4">
+                  No items added yet. Use "Add Expense Item" to get started.
+                </p>
               ) : (
-                <div className="space-y-3">
-                  {allItems.map((item) => (
-                    <div key={item.id} className="flex items-start justify-between p-4 border rounded-md">
-                      <div className="flex-1">
-                        <div className="flex items-center gap-2">
-                          <span className="text-xs px-2 py-0.5 rounded bg-gray-100 font-medium">{item.type}</span>
-                          <span className="text-sm font-medium">{item.expense_type || item.type}</span>
-                          {item.supplier && <span className="text-xs text-muted-foreground">· {item.supplier}</span>}
+                <div>
+                  {/* Items table header */}
+                  <div className="grid grid-cols-[1fr_auto_auto] gap-4 items-center py-2 border-b border-gray-100 mb-1">
+                    <span className="text-[11px] font-semibold text-gray-500 uppercase tracking-wide">Item</span>
+                    <span className="text-[11px] font-semibold text-gray-500 uppercase tracking-wide w-20 text-right">Amount</span>
+                    {canEdit && <span className="w-20" />}
+                  </div>
+
+                  <div className="space-y-0 divide-y divide-gray-100">
+                    {allItems.map((item) => (
+                      <div key={item.id} className="grid grid-cols-[1fr_auto_auto] gap-4 items-center py-3.5">
+                        {/* Item description */}
+                        <div>
+                          <div className="flex items-center gap-2">
+                            <span className="text-[11px] px-1.5 py-0.5 rounded bg-gray-100 text-gray-600 font-medium uppercase tracking-wide">
+                              {item.type}
+                            </span>
+                            <span className="text-sm font-medium text-gray-900">
+                              {item.expense_type || item.type}
+                            </span>
+                            {item.supplier && (
+                              <span className="text-sm text-gray-500">— {item.supplier}</span>
+                            )}
+                          </div>
+                          <div className="text-xs text-gray-500 mt-1 flex items-center gap-2">
+                            <span>{formatDate(item.transaction_date)}</span>
+                            {item.business_purpose && (
+                              <>
+                                <span className="text-gray-300">·</span>
+                                <span>{item.business_purpose}</span>
+                              </>
+                            )}
+                          </div>
+                          {item.type === 'mileage' && (
+                            <p className="text-xs text-gray-500 mt-0.5">
+                              {item.from_location} → {item.to_location} · {item.distance} miles
+                            </p>
+                          )}
                         </div>
-                        <div className="mt-1 text-sm text-muted-foreground">
-                          {formatDate(item.transaction_date)}
-                          {item.business_purpose && ` · ${item.business_purpose}`}
+
+                        {/* Amount */}
+                        <div className="text-right w-20">
+                          <p className="text-sm font-semibold text-gray-900 tabular-nums">
+                            {item.type === 'mileage'
+                              ? formatCurrency(item.reimbursement_amount)
+                              : formatCurrency(item.amount)}
+                          </p>
+                          {item.vat > 0 && (
+                            <p className="text-[11px] text-gray-400 tabular-nums">
+                              VAT {formatCurrency(item.vat)}
+                            </p>
+                          )}
                         </div>
-                        {item.type === 'mileage' && (
-                          <p className="text-xs text-muted-foreground mt-1">{item.from_location} → {item.to_location} · {item.distance} miles</p>
-                        )}
-                      </div>
-                      <div className="text-right ml-4">
-                        <p className="font-semibold">
-                          {item.type === 'mileage' ? formatCurrency(item.reimbursement_amount) : formatCurrency(item.amount)}
-                        </p>
-                        {item.vat > 0 && <p className="text-xs text-muted-foreground">VAT: {formatCurrency(item.vat)}</p>}
+
+                        {/* Actions */}
                         {canEdit && (
-                          <div className="flex gap-1 mt-2 justify-end">
-                            <button onClick={() => setEditingItem(item)} className="text-xs text-primary hover:underline">Edit</button>
-                            <button onClick={() => handleDeleteItem(item.id)} className="text-xs text-destructive hover:underline ml-2">Remove</button>
+                          <div className="flex items-center gap-2 w-20 justify-end">
+                            <button
+                              onClick={() => setEditingItem(item)}
+                              className="text-xs text-blue-600 hover:text-blue-700 font-medium"
+                            >
+                              Edit
+                            </button>
+                            <button
+                              onClick={() => handleDeleteItem(item.id)}
+                              className="text-xs text-red-500 hover:text-red-700 font-medium"
+                            >
+                              Remove
+                            </button>
                           </div>
                         )}
                       </div>
-                    </div>
-                  ))}
-                  {/* Total */}
-                  <div className="flex justify-end pt-2 border-t">
-                    <div className="text-right">
-                      <p className="text-sm text-muted-foreground">Total</p>
-                      <p className="text-xl font-bold">
-                        {formatCurrency(allItems.reduce((sum, item) => sum + parseFloat(item.type === 'mileage' ? item.reimbursement_amount || 0 : item.amount || 0), 0))}
-                      </p>
-                    </div>
+                    ))}
+                  </div>
+
+                  {/* Total row */}
+                  <div className="flex items-center justify-between pt-3 mt-2 border-t border-gray-200">
+                    <span className="text-sm font-medium text-gray-700">Total claim amount</span>
+                    <span className="text-lg font-semibold text-gray-900 tabular-nums">
+                      {formatCurrency(totalAmount)}
+                    </span>
                   </div>
                 </div>
               )}
+
               {/* Submit button */}
-              {canEdit && allItems.length > 0 && (
-                <div className="pt-4 border-t">
+              {canEdit && allItems.length > 0 && !showItemForm && !editingItem && (
+                <div className="pt-4 border-t border-gray-100">
                   <Button onClick={handleSubmit} disabled={actionLoading}>
-                    {actionLoading ? 'Submitting…' : 'Submit Claim'}
+                    {actionLoading ? 'Submitting…' : 'Submit Claim for Approval'}
                   </Button>
+                  <p className="text-xs text-gray-500 mt-2">
+                    Once submitted, the claim will be sent to your manager for review.
+                  </p>
                 </div>
               )}
             </div>
@@ -279,21 +451,43 @@ export default function ClaimDetail() {
 
           {/* Alerts Tab */}
           {tab === 'Alerts' && (
-            <div className="space-y-3">
-              {alerts.length === 0 && <p className="text-muted-foreground text-sm">No alerts.</p>}
+            <div className="space-y-2.5">
+              {alerts.length === 0 && (
+                <p className="text-sm text-gray-500 py-4">No alerts on this claim.</p>
+              )}
               {alerts.map((alert) => (
-                <div key={alert.id} className={`flex items-start justify-between p-3 rounded-md border ${alert.resolved ? 'opacity-50' : alert.severity === 'error' ? 'bg-red-50 border-red-200' : 'bg-yellow-50 border-yellow-200'}`}>
-                  <div className="flex items-start gap-2">
-                    {alert.severity === 'error' ? <AlertCircle className="w-4 h-4 text-red-500 mt-0.5 flex-shrink-0" /> : <AlertTriangle className="w-4 h-4 text-yellow-500 mt-0.5 flex-shrink-0" />}
-                    <div>
-                      <p className="text-sm font-medium">{alert.message}</p>
-                      <p className="text-xs text-muted-foreground capitalize">{alert.type.replace('_', ' ')}</p>
-                    </div>
+                <div
+                  key={alert.id}
+                  className={`flex items-start gap-3 p-3.5 rounded border ${
+                    alert.resolved
+                      ? 'opacity-50 bg-gray-50 border-gray-200'
+                      : alert.severity === 'error'
+                        ? 'bg-red-50 border-red-200'
+                        : 'bg-amber-50 border-amber-200'
+                  }`}
+                >
+                  <div className="flex-shrink-0 mt-0.5">
+                    {alert.severity === 'error'
+                      ? <AlertCircle className="w-4 h-4 text-red-500" />
+                      : <AlertTriangle className="w-4 h-4 text-amber-500" />
+                    }
                   </div>
-                  {!alert.resolved && isOwner && (
-                    <button onClick={() => handleResolveAlert(alert.id)} className="text-xs text-primary hover:underline flex-shrink-0 ml-2">Resolve</button>
-                  )}
-                  {alert.resolved && <CheckCircle2 className="w-4 h-4 text-green-500 flex-shrink-0" />}
+                  <div className="flex-1">
+                    <p className="text-sm font-medium text-gray-900">{alert.message}</p>
+                    <p className="text-xs text-gray-500 capitalize mt-0.5">
+                      {alert.type.replace(/_/g, ' ')}
+                    </p>
+                  </div>
+                  {alert.resolved ? (
+                    <CheckCircle2 className="w-4 h-4 text-green-500 flex-shrink-0" />
+                  ) : isOwner ? (
+                    <button
+                      onClick={() => handleResolveAlert(alert.id)}
+                      className="text-xs text-blue-600 hover:text-blue-700 font-medium flex-shrink-0"
+                    >
+                      Resolve
+                    </button>
+                  ) : null}
                 </div>
               ))}
             </div>
@@ -301,48 +495,83 @@ export default function ClaimDetail() {
 
           {/* Comments Tab */}
           {tab === 'Comments' && (
-            <div className="space-y-4">
-              <div className="space-y-3">
-                {comments.length === 0 && <p className="text-muted-foreground text-sm">No comments yet.</p>}
+            <div className="space-y-5">
+              <div className="space-y-4">
+                {comments.length === 0 && (
+                  <p className="text-sm text-gray-500 py-2">No comments yet.</p>
+                )}
                 {comments.map((c) => (
                   <div key={c.id} className="flex gap-3">
-                    <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
-                      <span className="text-xs font-medium text-primary">{c.user_name?.charAt(0)}</span>
+                    <div className="w-7 h-7 rounded-full bg-blue-100 flex items-center justify-center flex-shrink-0 mt-0.5">
+                      <span className="text-[11px] font-semibold text-blue-700">
+                        {c.user_name?.charAt(0)}
+                      </span>
                     </div>
                     <div className="flex-1">
-                      <div className="flex items-center gap-2">
-                        <span className="text-sm font-medium">{c.user_name}</span>
-                        <span className="text-xs text-muted-foreground capitalize px-1.5 py-0.5 bg-gray-100 rounded">{c.user_role}</span>
-                        <span className="text-xs text-muted-foreground">{formatDate(c.created_at)}</span>
+                      <div className="flex items-center gap-2 mb-1">
+                        <span className="text-sm font-medium text-gray-900">{c.user_name}</span>
+                        <span className="text-[11px] text-gray-500 capitalize px-1.5 py-0.5 bg-gray-100 rounded font-medium">
+                          {c.user_role}
+                        </span>
+                        <span className="text-xs text-gray-400">{formatDate(c.created_at)}</span>
                       </div>
-                      <p className="text-sm mt-1 whitespace-pre-wrap">{c.message}</p>
+                      <p className="text-sm text-gray-700 whitespace-pre-wrap leading-relaxed">
+                        {c.message}
+                      </p>
                     </div>
                   </div>
                 ))}
               </div>
-              <form onSubmit={handleComment} className="flex gap-2 pt-3 border-t">
-                <Textarea value={comment} onChange={(e) => setComment(e.target.value)} placeholder="Add a comment…" rows={2} className="flex-1" />
-                <Button type="submit" size="sm" disabled={!comment.trim()}><MessageSquare className="w-4 h-4" /></Button>
+
+              {/* Comment input */}
+              <form onSubmit={handleComment} className="flex gap-2 pt-3 border-t border-gray-100">
+                <Textarea
+                  value={comment}
+                  onChange={(e) => setComment(e.target.value)}
+                  placeholder="Add a comment…"
+                  rows={2}
+                  className="flex-1"
+                />
+                <Button
+                  type="submit"
+                  size="sm"
+                  disabled={!comment.trim()}
+                  className="self-end"
+                >
+                  <MessageSquare className="w-3.5 h-3.5" />
+                </Button>
               </form>
             </div>
           )}
 
           {/* Receipts Tab */}
           {tab === 'Receipts' && (
-            <div className="space-y-4">
+            <div className="space-y-3">
               {allItems.filter((i) => i.type === 'expense').length === 0 && (
-                <p className="text-muted-foreground text-sm">No expense items.</p>
+                <p className="text-sm text-gray-500 py-4">No expense items on this claim.</p>
               )}
               {allItems.filter((i) => i.type === 'expense').map((item) => (
-                <div key={item.id} className="border rounded-md p-4">
-                  <p className="text-sm font-medium mb-3">{item.expense_type} · {formatDate(item.transaction_date)} · {formatCurrency(item.amount)}</p>
+                <div key={item.id} className="flex items-center justify-between p-4 border border-gray-200 rounded">
+                  <div>
+                    <p className="text-sm font-medium text-gray-900">
+                      {item.expense_type}
+                    </p>
+                    <p className="text-xs text-gray-500 mt-0.5">
+                      {formatDate(item.transaction_date)} · {formatCurrency(item.amount)}
+                    </p>
+                  </div>
                   {canEdit && (
                     <label className="cursor-pointer">
-                      <span className="flex items-center gap-2 text-sm text-primary hover:underline">
-                        <Upload className="w-4 h-4" /> Upload receipt
+                      <span className="inline-flex items-center gap-1.5 text-sm text-blue-600 hover:text-blue-700 font-medium">
+                        <Upload className="w-3.5 h-3.5" />
+                        Upload receipt
                       </span>
-                      <input type="file" accept="image/*,.pdf" className="hidden"
-                        onChange={(e) => handleReceiptUpload(item.id, e.target.files[0])} />
+                      <input
+                        type="file"
+                        accept="image/*,.pdf"
+                        className="hidden"
+                        onChange={(e) => handleReceiptUpload(item.id, e.target.files[0])}
+                      />
                     </label>
                   )}
                 </div>
@@ -352,17 +581,25 @@ export default function ClaimDetail() {
         </CardContent>
       </Card>
 
-      {/* Audit Log */}
+      {/* Audit trail */}
       {claim.audit_log?.length > 0 && (
         <Card>
-          <CardHeader><CardTitle className="text-sm">Audit Trail</CardTitle></CardHeader>
-          <CardContent className="p-4">
-            <div className="space-y-2">
+          <CardHeader>
+            <CardTitle>Audit Trail</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="divide-y divide-gray-100">
               {claim.audit_log.map((log) => (
-                <div key={log.id} className="flex items-center gap-3 text-sm">
-                  <span className="text-muted-foreground text-xs w-32 flex-shrink-0">{formatDate(log.created_at)}</span>
-                  <span className="font-medium">{log.user_name}</span>
-                  <span className="text-muted-foreground capitalize">{log.action.replace('_', ' ')}</span>
+                <div key={log.id} className="flex items-center gap-4 py-2.5">
+                  <span className="text-xs text-gray-400 w-28 flex-shrink-0 tabular-nums">
+                    {formatDate(log.created_at)}
+                  </span>
+                  <span className="text-sm font-medium text-gray-900 w-32 flex-shrink-0 truncate">
+                    {log.user_name}
+                  </span>
+                  <span className="text-sm text-gray-600 capitalize">
+                    {log.action.replace(/_/g, ' ')}
+                  </span>
                 </div>
               ))}
             </div>

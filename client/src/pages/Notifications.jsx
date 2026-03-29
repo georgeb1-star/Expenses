@@ -1,10 +1,9 @@
 import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { notificationsApi } from '../api';
-import { Card, CardHeader, CardTitle, CardContent } from '../components/ui/Card';
 import { Button } from '../components/ui/Button';
 import { formatDate } from '../lib/utils';
-import { Bell } from 'lucide-react';
+import { ArrowRight } from 'lucide-react';
 
 export default function Notifications() {
   const [notifications, setNotifications] = useState([]);
@@ -28,42 +27,74 @@ export default function Notifications() {
 
   return (
     <div className="space-y-6">
+      {/* Page header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold">Notifications</h1>
-          <p className="text-muted-foreground">{unread.length} unread</p>
+          <h1 className="text-xl font-semibold text-gray-900">Notifications</h1>
+          <p className="text-sm text-gray-500 mt-0.5">
+            {unread.length > 0 ? `${unread.length} unread` : 'All caught up'}
+          </p>
         </div>
         {unread.length > 0 && (
-          <Button variant="outline" size="sm" onClick={markAllRead}>Mark all read</Button>
+          <Button variant="outline" size="sm" onClick={markAllRead}>
+            Mark all as read
+          </Button>
         )}
       </div>
 
       {loading ? (
-        <div className="flex items-center justify-center h-40"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" /></div>
+        <div className="flex items-center justify-center h-40">
+          <div className="animate-spin rounded-full h-6 w-6 border-2 border-gray-300 border-t-blue-600" />
+        </div>
       ) : notifications.length === 0 ? (
-        <Card><CardContent className="p-8 text-center text-muted-foreground">No notifications yet.</CardContent></Card>
+        <div className="flex flex-col items-center justify-center py-16 text-center border border-gray-200 rounded bg-white">
+          <p className="text-sm font-medium text-gray-700">No notifications yet.</p>
+        </div>
       ) : (
-        <Card>
-          <div className="divide-y">
-            {notifications.map((n) => (
-              <div key={n.id} className={`flex items-start gap-4 p-4 transition-colors ${!n.read ? 'bg-blue-50/50' : ''}`}>
-                <div className={`w-2 h-2 rounded-full mt-2 flex-shrink-0 ${!n.read ? 'bg-primary' : 'bg-transparent'}`} />
-                <div className="flex-1">
-                  <p className="text-sm">{n.message}</p>
-                  <div className="flex items-center gap-3 mt-1">
-                    <span className="text-xs text-muted-foreground">{formatDate(n.created_at)}</span>
-                    {n.claim_id && (
-                      <Link to={`/claims/${n.claim_id}`} className="text-xs text-primary hover:underline">View claim</Link>
-                    )}
-                  </div>
-                </div>
+        <div className="border border-gray-200 rounded bg-white overflow-hidden divide-y divide-gray-100">
+          {notifications.map((n) => (
+            <div
+              key={n.id}
+              className={`flex items-start gap-4 px-5 py-4 transition-colors ${!n.read ? 'bg-blue-50/40' : 'hover:bg-gray-50'}`}
+            >
+              {/* Unread indicator */}
+              <div className="pt-1.5 flex-shrink-0 w-4 flex justify-center">
                 {!n.read && (
-                  <button onClick={() => markRead(n.id)} className="text-xs text-muted-foreground hover:text-foreground">Dismiss</button>
+                  <span className="w-2 h-2 rounded-full bg-blue-600 block" aria-label="Unread" />
                 )}
               </div>
-            ))}
-          </div>
-        </Card>
+
+              {/* Content */}
+              <div className="flex-1 min-w-0">
+                <p className={`text-sm leading-snug ${!n.read ? 'text-gray-900 font-medium' : 'text-gray-700'}`}>
+                  {n.message}
+                </p>
+                <div className="flex items-center gap-3 mt-1.5">
+                  <span className="text-xs text-gray-400">{formatDate(n.created_at)}</span>
+                  {n.claim_id && (
+                    <Link
+                      to={`/claims/${n.claim_id}`}
+                      className="inline-flex items-center gap-1 text-xs text-blue-600 hover:text-blue-700 font-medium"
+                    >
+                      View claim
+                      <ArrowRight className="w-3 h-3" />
+                    </Link>
+                  )}
+                </div>
+              </div>
+
+              {/* Dismiss */}
+              {!n.read && (
+                <button
+                  onClick={() => markRead(n.id)}
+                  className="flex-shrink-0 text-xs text-gray-400 hover:text-gray-600 transition-colors mt-0.5"
+                >
+                  Dismiss
+                </button>
+              )}
+            </div>
+          ))}
+        </div>
       )}
     </div>
   );

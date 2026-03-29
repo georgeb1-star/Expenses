@@ -3,24 +3,40 @@ import { cn } from '../../lib/utils';
 
 export function Card({ className, children, ...props }) {
   return (
-    <div className={cn('rounded-lg border bg-card text-card-foreground shadow-sm', className)} {...props}>
+    <div className={cn('rounded border border-gray-200 bg-white shadow-none', className)} {...props}>
       {children}
     </div>
   );
 }
 
 export function CardHeader({ className, children, ...props }) {
-  return <div className={cn('flex flex-col space-y-1.5 p-6', className)} {...props}>{children}</div>;
+  return (
+    <div className={cn('flex flex-col space-y-1 px-5 py-4 border-b border-gray-100', className)} {...props}>
+      {children}
+    </div>
+  );
 }
 
 export function CardTitle({ className, children, ...props }) {
-  return <h3 className={cn('text-lg font-semibold leading-none tracking-tight', className)} {...props}>{children}</h3>;
+  return (
+    <h3 className={cn('text-sm font-semibold text-gray-900 leading-none', className)} {...props}>
+      {children}
+    </h3>
+  );
 }
 
 export function CardContent({ className, children, ...props }) {
-  return <div className={cn('p-6 pt-0', className)} {...props}>{children}</div>;
+  return (
+    <div className={cn('px-5 py-4', className)} {...props}>
+      {children}
+    </div>
+  );
 }
 
 export function CardFooter({ className, children, ...props }) {
-  return <div className={cn('flex items-center p-6 pt-0', className)} {...props}>{children}</div>;
+  return (
+    <div className={cn('flex items-center px-5 py-4 border-t border-gray-100', className)} {...props}>
+      {children}
+    </div>
+  );
 }

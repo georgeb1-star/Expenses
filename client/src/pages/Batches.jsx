@@ -1,10 +1,9 @@
 import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { batchesApi } from '../api';
-import { Card, CardContent } from '../components/ui/Card';
 import { Button } from '../components/ui/Button';
 import { formatDate } from '../lib/utils';
-import { Download, Package } from 'lucide-react';
+import { Download, Package, ExternalLink } from 'lucide-react';
 
 export default function Batches() {
   const [batches, setBatches] = useState([]);
@@ -15,7 +14,6 @@ export default function Batches() {
   }, []);
 
   const handleExport = (batch) => {
-    // Navigate to export URL — browser will download CSV
     const token = localStorage.getItem('token');
     fetch(batchesApi.exportUrl(batch.id), { headers: { Authorization: `Bearer ${token}` } })
       .then((r) => r.blob())
@@ -26,52 +24,89 @@ export default function Batches() {
         a.download = `batch-${batch.name.replace(/[^a-z0-9]/gi, '_')}.csv`;
         a.click();
         URL.revokeObjectURL(url);
-        setBatches((prev) => prev.map((b) => b.id === batch.id ? { ...b, exported_at: new Date().toISOString() } : b));
+        setBatches((prev) =>
+          prev.map((b) => b.id === batch.id ? { ...b, exported_at: new Date().toISOString() } : b)
+        );
       });
   };
 
   return (
     <div className="space-y-6">
+      {/* Page header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold">Batches</h1>
-          <p className="text-muted-foreground">{batches.length} batch{batches.length !== 1 ? 'es' : ''}</p>
+          <h1 className="text-xl font-semibold text-gray-900">Batches</h1>
+          <p className="text-sm text-gray-500 mt-0.5">
+            {batches.length} batch{batches.length !== 1 ? 'es' : ''}
+          </p>
         </div>
         <Link to="/finance">
-          <Button variant="outline"><Package className="w-4 h-4 mr-2" /> Create Batch</Button>
+          <Button variant="outline" size="sm">
+            <Package className="w-4 h-4 mr-1.5" />
+            Create Batch
+          </Button>
         </Link>
       </div>
 
       {loading ? (
-        <div className="flex items-center justify-center h-40"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" /></div>
+        <div className="flex items-center justify-center h-40">
+          <div className="animate-spin rounded-full h-6 w-6 border-2 border-gray-300 border-t-blue-600" />
+        </div>
       ) : batches.length === 0 ? (
-        <Card><CardContent className="p-8 text-center text-muted-foreground">No batches yet. Go to Finance to create one.</CardContent></Card>
+        <div className="flex flex-col items-center justify-center py-16 text-center border border-gray-200 rounded bg-white">
+          <p className="text-sm font-medium text-gray-700">No batches yet.</p>
+          <p className="text-sm text-gray-500 mt-1">
+            Go to <Link to="/finance" className="text-blue-600 hover:underline">Finance</Link> to create your first batch.
+          </p>
+        </div>
       ) : (
-        <Card>
-          <div className="divide-y">
+        <div className="border border-gray-200 rounded bg-white overflow-hidden">
+          {/* Table header */}
+          <div className="grid grid-cols-[1fr_auto_auto_auto] gap-4 items-center px-5 py-2.5 bg-gray-50 border-b border-gray-200">
+            <span className="text-[11px] font-semibold text-gray-500 uppercase tracking-wide">Batch</span>
+            <span className="text-[11px] font-semibold text-gray-500 uppercase tracking-wide w-32">Created</span>
+            <span className="text-[11px] font-semibold text-gray-500 uppercase tracking-wide w-28 text-center">Status</span>
+            <span className="text-[11px] font-semibold text-gray-500 uppercase tracking-wide w-24 text-right">Export</span>
+          </div>
+
+          <div className="divide-y divide-gray-100">
             {batches.map((batch) => (
-              <div key={batch.id} className="flex items-center justify-between p-4">
+              <div key={batch.id} className="grid grid-cols-[1fr_auto_auto_auto] gap-4 items-center px-5 py-3.5 hover:bg-gray-50 transition-colors">
+                {/* Batch info */}
                 <div>
-                  <p className="font-medium">{batch.name}</p>
-                  <p className="text-sm text-muted-foreground">
-                    {batch.claim_count} claim{batch.claim_count !== 1 ? 's' : ''} · Created {formatDate(batch.created_at)} by {batch.processor_name}
-                    {batch.exported_at && ` · Exported ${formatDate(batch.exported_at)}`}
+                  <p className="text-sm font-medium text-gray-900">{batch.name}</p>
+                  <p className="text-xs text-gray-500 mt-0.5">
+                    {batch.claim_count} claim{batch.claim_count !== 1 ? 's' : ''} · Created by {batch.processor_name}
                   </p>
                 </div>
-                <div className="flex items-center gap-2">
+
+                {/* Created date */}
+                <span className="text-sm text-gray-500 w-32">{formatDate(batch.created_at)}</span>
+
+                {/* Status badge */}
+                <div className="w-28 flex justify-center">
                   {batch.exported_at ? (
-                    <span className="text-xs px-2 py-1 bg-emerald-100 text-emerald-700 rounded-full">Exported</span>
+                    <span className="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-medium bg-teal-50 text-teal-700">
+                      Exported {formatDate(batch.exported_at)}
+                    </span>
                   ) : (
-                    <span className="text-xs px-2 py-1 bg-orange-100 text-orange-700 rounded-full">Pending export</span>
+                    <span className="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-medium bg-orange-50 text-orange-700">
+                      Pending export
+                    </span>
                   )}
+                </div>
+
+                {/* Export action */}
+                <div className="w-24 flex justify-end">
                   <Button size="sm" variant="outline" onClick={() => handleExport(batch)}>
-                    <Download className="w-4 h-4 mr-1" /> CSV
+                    <Download className="w-3.5 h-3.5 mr-1" />
+                    CSV
                   </Button>
                 </div>
               </div>
             ))}
           </div>
-        </Card>
+        </div>
       )}
     </div>
   );

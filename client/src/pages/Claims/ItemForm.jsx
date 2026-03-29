@@ -52,11 +52,15 @@ export function ItemForm({ claimId, item, onSave, onCancel }) {
         savedItem = data;
       }
       if (file && !editing) {
-        await receiptsApi.upload(claimId, savedItem.id, file);
+        try {
+          await receiptsApi.upload(claimId, savedItem.id, file);
+        } catch {
+          // Item saved — receipt upload failed. Proceed and let user upload separately.
+        }
       }
       onSave(savedItem);
     } catch (err) {
-      setError(err.response?.data?.error || 'Failed to save item');
+      setError(err.response?.data?.error || 'Failed to save item. Please try again.');
     } finally {
       setSaving(false);
     }

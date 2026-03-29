@@ -38,7 +38,10 @@ router.post('/', async (req, res, next) => {
       claim_id: claim.id, type, expense_type, supplier, transaction_date,
       amount: amount || 0, vat: vat || 0, currency, payment_type, business_purpose,
       department, project, billable,
-      from_location, to_location, vehicle_type, distance, passengers, reimbursement_amount,
+      from_location, to_location, vehicle_type,
+      distance: distance || null,
+      passengers: passengers || null,
+      reimbursement_amount,
     }).returning('*');
 
     await db('claims').where({ id: claim.id }).update({ updated_at: db.fn.now() });

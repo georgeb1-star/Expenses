@@ -21,9 +21,13 @@ router.get('/', async (req, res) => {
 
   if (role === 'employee') query = query.where('claims.user_id', userId);
   else if (role === 'manager') {
-    // Manager sees their own team submissions
+    // Manager sees claims explicitly assigned to them, plus their own claims,
+    // plus any claims from employees whose manager_id points to them
     const team = await db('users').where({ manager_id: userId }).pluck('id');
-    query = query.whereIn('claims.user_id', [...team, userId]);
+    query = query.where((q) => {
+      q.where('claims.manager_id', userId)
+        .orWhereIn('claims.user_id', [...team, userId]);
+    });
   }
   // processor / admin see all
 

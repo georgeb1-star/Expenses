@@ -110,7 +110,7 @@ export default function ClaimDetail() {
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
-        <div className="animate-spin rounded-full h-6 w-6 border-2 border-gray-300 border-t-blue-600" />
+        <div className="animate-spin rounded-full h-6 w-6 border-2 border-gray-300 border-t-red-700" />
       </div>
     );
   }
@@ -292,7 +292,7 @@ export default function ClaimDetail() {
               onClick={() => setTab(t)}
               className={`relative py-3 mr-6 text-sm font-medium border-b-2 transition-colors ${
                 tab === t
-                  ? 'border-blue-600 text-blue-700'
+                  ? 'border-red-700 text-red-700'
                   : 'border-transparent text-gray-500 hover:text-gray-700'
               }`}
             >
@@ -409,7 +409,7 @@ export default function ClaimDetail() {
                           <div className="flex items-center gap-2 w-20 justify-end">
                             <button
                               onClick={() => setEditingItem(item)}
-                              className="text-xs text-blue-600 hover:text-blue-700 font-medium"
+                              className="text-xs text-red-700 hover:text-red-800 font-medium"
                             >
                               Edit
                             </button>
@@ -483,7 +483,7 @@ export default function ClaimDetail() {
                   ) : isOwner ? (
                     <button
                       onClick={() => handleResolveAlert(alert.id)}
-                      className="text-xs text-blue-600 hover:text-blue-700 font-medium flex-shrink-0"
+                      className="text-xs text-red-700 hover:text-red-800 font-medium flex-shrink-0"
                     >
                       Resolve
                     </button>
@@ -502,8 +502,8 @@ export default function ClaimDetail() {
                 )}
                 {comments.map((c) => (
                   <div key={c.id} className="flex gap-3">
-                    <div className="w-7 h-7 rounded-full bg-blue-100 flex items-center justify-center flex-shrink-0 mt-0.5">
-                      <span className="text-[11px] font-semibold text-blue-700">
+                    <div className="w-7 h-7 rounded-full bg-red-100 flex items-center justify-center flex-shrink-0 mt-0.5">
+                      <span className="text-[11px] font-semibold text-red-700">
                         {c.user_name?.charAt(0)}
                       </span>
                     </div>
@@ -562,7 +562,7 @@ export default function ClaimDetail() {
                   </div>
                   {canEdit && (
                     <label className="cursor-pointer">
-                      <span className="inline-flex items-center gap-1.5 text-sm text-blue-600 hover:text-blue-700 font-medium">
+                      <span className="inline-flex items-center gap-1.5 text-sm text-red-700 hover:text-red-800 font-medium">
                         <Upload className="w-3.5 h-3.5" />
                         Upload receipt
                       </span>

@@ -20,7 +20,7 @@ export function StatusTimeline({ status }) {
                   className={cn(
                     'flex items-center justify-center w-7 h-7 rounded-full border-2 transition-colors',
                     done && 'bg-green-500 border-green-500',
-                    active && 'bg-blue-600 border-blue-600',
+                    active && 'bg-red-700 border-red-700',
                     !done && !active && 'bg-white border-gray-300'
                   )}
                 >
@@ -36,7 +36,7 @@ export function StatusTimeline({ status }) {
                   className={cn(
                     'text-[11px] whitespace-nowrap font-medium',
                     done && 'text-green-600',
-                    active && 'text-blue-700',
+                    active && 'text-red-700',
                     !done && !active && 'text-gray-400'
                   )}
                 >

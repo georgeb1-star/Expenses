@@ -59,16 +59,16 @@ export default function Finance() {
 
       {/* Batch creation panel — only shown when items selected */}
       {selected.length > 0 && (
-        <div className="border border-blue-200 bg-blue-50 rounded p-4">
-          <p className="text-sm font-medium text-blue-900 mb-3">
+        <div className="border border-red-200 bg-red-50 rounded p-4">
+          <p className="text-sm font-medium text-red-900 mb-3">
             {selected.length} claim{selected.length !== 1 ? 's' : ''} selected — create a batch to send to audit
           </p>
           <div className="flex items-start gap-3">
             <div className="flex-1 max-w-xs">
-              <label className="text-xs font-medium text-blue-800 block mb-1">Batch name</label>
+              <label className="text-xs font-medium text-red-800 block mb-1">Batch name</label>
               <input
                 type="text"
-                className="h-9 w-full rounded border border-blue-300 bg-white px-3 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                className="h-9 w-full rounded border border-red-300 bg-white px-3 text-sm focus:outline-none focus:ring-2 focus:ring-red-600 focus:border-red-600"
                 placeholder="e.g. March 2025 – Batch 1"
                 value={batchName}
                 onChange={(e) => setBatchName(e.target.value)}
@@ -93,7 +93,7 @@ export default function Finance() {
 
       {loading ? (
         <div className="flex items-center justify-center h-40">
-          <div className="animate-spin rounded-full h-6 w-6 border-2 border-gray-300 border-t-blue-600" />
+          <div className="animate-spin rounded-full h-6 w-6 border-2 border-gray-300 border-t-red-700" />
         </div>
       ) : claims.length === 0 ? (
         <div className="flex flex-col items-center justify-center py-16 text-center border border-gray-200 rounded bg-white">
@@ -108,7 +108,7 @@ export default function Finance() {
               type="checkbox"
               checked={allSelected}
               onChange={toggleAll}
-              className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+              className="rounded border-gray-300 text-red-700 focus:ring-red-600"
               aria-label="Select all claims"
             />
             <span className="text-[11px] font-semibold text-gray-500 uppercase tracking-wide flex-1">Claim</span>
@@ -121,18 +121,18 @@ export default function Finance() {
             {claims.map((claim) => (
               <div
                 key={claim.id}
-                className={`flex items-center gap-4 px-5 py-3.5 transition-colors ${selected.includes(claim.id) ? 'bg-blue-50/60' : 'hover:bg-gray-50'}`}
+                className={`flex items-center gap-4 px-5 py-3.5 transition-colors ${selected.includes(claim.id) ? 'bg-red-50/60' : 'hover:bg-gray-50'}`}
               >
                 <input
                   type="checkbox"
                   checked={selected.includes(claim.id)}
                   onChange={() => toggleSelect(claim.id)}
-                  className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                  className="rounded border-gray-300 text-red-700 focus:ring-red-600"
                 />
                 <div className="flex-1 min-w-0">
                   <Link
                     to={`/claims/${claim.id}`}
-                    className="text-sm font-medium text-gray-900 hover:text-blue-700 truncate block transition-colors"
+                    className="text-sm font-medium text-gray-900 hover:text-red-700 truncate block transition-colors"
                   >
                     {claim.title}
                   </Link>

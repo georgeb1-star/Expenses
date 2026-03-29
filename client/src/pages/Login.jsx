@@ -31,7 +31,7 @@ export default function Login() {
       <div className="w-full max-w-sm">
         {/* Brand mark */}
         <div className="flex flex-col items-center mb-8">
-          <div className="w-10 h-10 rounded-lg bg-blue-600 flex items-center justify-center mb-3">
+          <div className="w-10 h-10 rounded-lg bg-red-700 flex items-center justify-center mb-3">
             <ReceiptText className="w-5 h-5 text-white" />
           </div>
           <h1 className="text-lg font-semibold text-gray-900">ExpenseFlow</h1>
@@ -82,7 +82,7 @@ export default function Login() {
 
             <p className="text-sm text-center text-gray-500">
               No account?{' '}
-              <Link to="/register" className="text-blue-600 hover:text-blue-700 font-medium">
+              <Link to="/register" className="text-red-700 hover:text-red-800 font-medium">
                 Register
               </Link>
             </p>

@@ -44,7 +44,7 @@ export function Layout({ children }) {
         {/* Brand */}
         <div className="h-14 flex items-center px-5 border-b border-gray-200">
           <div className="flex items-center gap-2.5">
-            <div className="w-6 h-6 rounded bg-blue-600 flex items-center justify-center flex-shrink-0">
+            <div className="w-6 h-6 rounded bg-red-700 flex items-center justify-center flex-shrink-0">
               <ReceiptText className="w-3.5 h-3.5 text-white" />
             </div>
             <span className="text-sm font-semibold text-gray-900 tracking-tight">ExpenseFlow</span>
@@ -62,7 +62,7 @@ export function Layout({ children }) {
                   cn(
                     'flex items-center gap-2.5 px-3 py-2 rounded text-sm transition-colors',
                     isActive
-                      ? 'bg-blue-50 text-blue-700 font-medium'
+                      ? 'bg-red-50 text-red-700 font-medium'
                       : 'text-gray-600 font-normal hover:bg-gray-100 hover:text-gray-900'
                   )
                 }
@@ -81,7 +81,7 @@ export function Layout({ children }) {
                 cn(
                   'flex items-center gap-2.5 px-3 py-2 rounded text-sm transition-colors w-full',
                   isActive
-                    ? 'bg-blue-50 text-blue-700 font-medium'
+                    ? 'bg-red-50 text-red-700 font-medium'
                     : 'text-gray-600 font-normal hover:bg-gray-100 hover:text-gray-900'
                 )
               }
@@ -89,7 +89,7 @@ export function Layout({ children }) {
               <Bell className="w-4 h-4 flex-shrink-0" />
               <span className="flex-1">Notifications</span>
               {unread > 0 && (
-                <span className="bg-blue-600 text-white text-[10px] font-semibold rounded px-1.5 py-0.5 leading-none">
+                <span className="bg-red-700 text-white text-[10px] font-semibold rounded px-1.5 py-0.5 leading-none">
                   {unread}
                 </span>
               )}
@@ -100,8 +100,8 @@ export function Layout({ children }) {
         {/* User footer */}
         <div className="border-t border-gray-200 p-3">
           <div className="flex items-center gap-2.5 px-2 py-2 rounded hover:bg-gray-50 group">
-            <div className="w-7 h-7 rounded-full bg-blue-100 flex items-center justify-center flex-shrink-0">
-              <span className="text-[10px] font-semibold text-blue-700">{initials}</span>
+            <div className="w-7 h-7 rounded-full bg-red-100 flex items-center justify-center flex-shrink-0">
+              <span className="text-[10px] font-semibold text-red-700">{initials}</span>
             </div>
             <div className="flex-1 min-w-0">
               <p className="text-xs font-medium text-gray-900 truncate">{user?.name}</p>

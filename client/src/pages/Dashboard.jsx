@@ -8,7 +8,7 @@ import { formatCurrency, formatDate } from '../lib/utils';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { FileText, Clock, CheckCircle, Send, ArrowRight, AlertCircle } from 'lucide-react';
 
-const CATEGORY_COLORS = ['#2563EB', '#16A34A', '#D97706', '#DC2626', '#7C3AED', '#0891B2'];
+const CATEGORY_COLORS = ['#CC1719', '#16A34A', '#D97706', '#7C3AED', '#0891B2', '#D97706'];
 
 export default function Dashboard() {
   const { user } = useAuth();
@@ -41,7 +41,7 @@ export default function Dashboard() {
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
-        <div className="animate-spin rounded-full h-6 w-6 border-2 border-gray-300 border-t-blue-600" />
+        <div className="animate-spin rounded-full h-6 w-6 border-2 border-gray-300 border-t-red-700" />
       </div>
     );
   }
@@ -69,8 +69,8 @@ export default function Dashboard() {
           label="In Progress"
           value={inProgress.length}
           href="/claims"
-          iconColor="text-blue-600"
-          iconBg="bg-blue-50"
+          iconColor="text-red-700"
+          iconBg="bg-red-50"
         />
         <MetricCard
           icon={CheckCircle}
@@ -129,7 +129,7 @@ export default function Dashboard() {
             <CardHeader>
               <div className="flex items-center justify-between">
                 <CardTitle>Recent Claims</CardTitle>
-                <Link to="/claims" className="text-xs text-blue-600 hover:text-blue-700 font-medium">
+                <Link to="/claims" className="text-xs text-red-700 hover:text-red-800 font-medium">
                   View all
                 </Link>
               </div>
@@ -187,8 +187,8 @@ export default function Dashboard() {
                   label="Claims in progress"
                   count={inProgress.length}
                   href="/claims"
-                  color="text-blue-700"
-                  dotColor="bg-blue-500"
+                  color="text-red-700"
+                  dotColor="bg-red-600"
                 />
               )}
               {user.role === 'manager' && pendingApprovals.length > 0 && (
@@ -291,7 +291,7 @@ export default function Dashboard() {
                       }}
                       cursor={{ fill: '#F3F4F6' }}
                     />
-                    <Bar dataKey="amount" fill="#2563EB" radius={[2, 2, 0, 0]} maxBarSize={32} />
+                    <Bar dataKey="amount" fill="#CC1719" radius={[2, 2, 0, 0]} maxBarSize={32} />
                   </BarChart>
                 </ResponsiveContainer>
               ) : (

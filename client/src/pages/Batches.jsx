@@ -50,13 +50,13 @@ export default function Batches() {
 
       {loading ? (
         <div className="flex items-center justify-center h-40">
-          <div className="animate-spin rounded-full h-6 w-6 border-2 border-gray-300 border-t-blue-600" />
+          <div className="animate-spin rounded-full h-6 w-6 border-2 border-gray-300 border-t-red-700" />
         </div>
       ) : batches.length === 0 ? (
         <div className="flex flex-col items-center justify-center py-16 text-center border border-gray-200 rounded bg-white">
           <p className="text-sm font-medium text-gray-700">No batches yet.</p>
           <p className="text-sm text-gray-500 mt-1">
-            Go to <Link to="/finance" className="text-blue-600 hover:underline">Finance</Link> to create your first batch.
+            Go to <Link to="/finance" className="text-red-700 hover:underline">Finance</Link> to create your first batch.
           </p>
         </div>
       ) : (

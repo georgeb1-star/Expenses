@@ -27,7 +27,7 @@ export default function Approvals() {
 
       {loading ? (
         <div className="flex items-center justify-center h-40">
-          <div className="animate-spin rounded-full h-6 w-6 border-2 border-gray-300 border-t-blue-600" />
+          <div className="animate-spin rounded-full h-6 w-6 border-2 border-gray-300 border-t-red-700" />
         </div>
       ) : claims.length === 0 ? (
         <div className="flex flex-col items-center justify-center py-16 text-center border border-gray-200 rounded bg-white">
@@ -54,7 +54,7 @@ export default function Approvals() {
                 {/* Title */}
                 <div className="min-w-0">
                   <div className="flex items-center gap-2">
-                    <p className="text-sm font-medium text-gray-900 truncate group-hover:text-blue-700 transition-colors">
+                    <p className="text-sm font-medium text-gray-900 truncate group-hover:text-red-700 transition-colors">
                       {claim.title}
                     </p>
                     {claim.alert_count > 0 && (
@@ -75,8 +75,8 @@ export default function Approvals() {
 
                 {/* Action */}
                 <div className="w-20 flex items-center justify-end gap-1">
-                  <span className="text-xs font-medium text-blue-600 group-hover:text-blue-700">Review</span>
-                  <ArrowRight className="w-3 h-3 text-blue-400 group-hover:text-blue-600 transition-colors" />
+                  <span className="text-xs font-medium text-red-700 group-hover:text-red-800">Review</span>
+                  <ArrowRight className="w-3 h-3 text-red-400 group-hover:text-red-700 transition-colors" />
                 </div>
               </Link>
             ))}

@@ -75,7 +75,7 @@ export default function ClaimList() {
           />
         </div>
         <select
-          className="h-9 rounded border border-gray-300 bg-white px-3 text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+          className="h-9 rounded border border-gray-300 bg-white px-3 text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-red-600 focus:border-red-600"
           value={statusFilter}
           onChange={(e) => setStatusFilter(e.target.value)}
         >
@@ -99,7 +99,7 @@ export default function ClaimList() {
       {/* Claims table */}
       {loading ? (
         <div className="flex items-center justify-center h-40">
-          <div className="animate-spin rounded-full h-6 w-6 border-2 border-gray-300 border-t-blue-600" />
+          <div className="animate-spin rounded-full h-6 w-6 border-2 border-gray-300 border-t-red-700" />
         </div>
       ) : filtered.length === 0 ? (
         <div className="flex flex-col items-center justify-center py-16 text-center border border-gray-200 rounded bg-white">
@@ -134,7 +134,7 @@ export default function ClaimList() {
                 {/* Title + alerts */}
                 <div className="min-w-0">
                   <div className="flex items-center gap-2">
-                    <p className="text-sm font-medium text-gray-900 truncate group-hover:text-blue-700 transition-colors">
+                    <p className="text-sm font-medium text-gray-900 truncate group-hover:text-red-700 transition-colors">
                       {claim.title}
                     </p>
                     {claim.alert_count > 0 && (

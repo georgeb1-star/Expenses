@@ -14,6 +14,11 @@ export default {
           DEFAULT: 'hsl(var(--primary))',
           foreground: 'hsl(var(--primary-foreground))',
         },
+        brand: {
+          DEFAULT: '#CC1719',
+          dark: '#a61315',
+          light: '#f5e6e6',
+        },
         secondary: {
           DEFAULT: 'hsl(var(--secondary))',
           foreground: 'hsl(var(--secondary-foreground))',

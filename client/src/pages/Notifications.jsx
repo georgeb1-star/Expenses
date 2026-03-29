@@ -44,7 +44,7 @@ export default function Notifications() {
 
       {loading ? (
         <div className="flex items-center justify-center h-40">
-          <div className="animate-spin rounded-full h-6 w-6 border-2 border-gray-300 border-t-blue-600" />
+          <div className="animate-spin rounded-full h-6 w-6 border-2 border-gray-300 border-t-red-700" />
         </div>
       ) : notifications.length === 0 ? (
         <div className="flex flex-col items-center justify-center py-16 text-center border border-gray-200 rounded bg-white">
@@ -55,12 +55,12 @@ export default function Notifications() {
           {notifications.map((n) => (
             <div
               key={n.id}
-              className={`flex items-start gap-4 px-5 py-4 transition-colors ${!n.read ? 'bg-blue-50/40' : 'hover:bg-gray-50'}`}
+              className={`flex items-start gap-4 px-5 py-4 transition-colors ${!n.read ? 'bg-red-50/40' : 'hover:bg-gray-50'}`}
             >
               {/* Unread indicator */}
               <div className="pt-1.5 flex-shrink-0 w-4 flex justify-center">
                 {!n.read && (
-                  <span className="w-2 h-2 rounded-full bg-blue-600 block" aria-label="Unread" />
+                  <span className="w-2 h-2 rounded-full bg-red-700 block" aria-label="Unread" />
                 )}
               </div>
 
@@ -74,7 +74,7 @@ export default function Notifications() {
                   {n.claim_id && (
                     <Link
                       to={`/claims/${n.claim_id}`}
-                      className="inline-flex items-center gap-1 text-xs text-blue-600 hover:text-blue-700 font-medium"
+                      className="inline-flex items-center gap-1 text-xs text-red-700 hover:text-red-800 font-medium"
                     >
                       View claim
                       <ArrowRight className="w-3 h-3" />

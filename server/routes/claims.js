@@ -202,6 +202,21 @@ router.post('/:id/reject', async (req, res) => {
   }
 });
 
+// POST /api/claims/:id/start-audit  (processor)
+router.post('/:id/start-audit', async (req, res) => {
+  if (!['processor', 'admin'].includes(req.user.role)) return res.status(403).json({ error: 'Forbidden' });
+  try {
+    const claim = await db('claims').where({ id: req.params.id }).first();
+    if (!claim) return res.status(404).json({ error: 'Claim not found' });
+
+    const updated = await transition(claim.id, 'audit', req.user.id, {});
+    await notify([claim.user_id], claim.id, `Your claim "${claim.title}" has been sent to finance audit`);
+    res.json(updated);
+  } catch (err) {
+    res.status(err.status || 500).json({ error: err.message || 'Start audit failed' });
+  }
+});
+
 // POST /api/claims/:id/audit-approve  (processor)
 router.post('/:id/audit-approve', async (req, res) => {
   if (!['processor', 'admin'].includes(req.user.role)) return res.status(403).json({ error: 'Forbidden' });

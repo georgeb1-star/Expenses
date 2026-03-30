@@ -17,6 +17,7 @@ export const claimsApi = {
   submit: (id) => api.post(`/claims/${id}/submit`),
   approve: (id, data) => api.post(`/claims/${id}/approve`, data),
   reject: (id, data) => api.post(`/claims/${id}/reject`, data),
+  startAudit: (id) => api.post(`/claims/${id}/start-audit`),
   auditApprove: (id, data) => api.post(`/claims/${id}/audit-approve`, data),
   auditReject: (id, data) => api.post(`/claims/${id}/audit-reject`, data),
 };

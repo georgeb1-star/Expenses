@@ -268,6 +268,27 @@ export default function ClaimDetail() {
         </Card>
       )}
 
+      {/* Send to audit panel — processor picks up approved claims */}
+      {claim.status === 'approved' && ['processor', 'admin'].includes(user.role) && (
+        <Card>
+          <CardHeader>
+            <CardTitle>Ready for Audit</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className="text-sm text-gray-600 mb-3">
+              This claim has been approved by the manager and is ready for finance audit.
+            </p>
+            <Button
+              size="sm"
+              onClick={() => handleAction(() => claimsApi.startAudit(id))}
+              disabled={actionLoading}
+            >
+              Start Audit
+            </Button>
+          </CardContent>
+        </Card>
+      )}
+
       {/* Finance / audit action panel */}
       {claim.status === 'audit' && ['processor', 'admin'].includes(user.role) && (
         <Card>

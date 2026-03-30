@@ -84,6 +84,18 @@ router.get('/:id', async (req, res) => {
   }
 
   const items = await db('claim_items').where({ claim_id: claim.id });
+
+  // Attach receipt metadata (no binary data) to each item
+  const receipts = await db('receipts')
+    .whereIn('claim_item_id', items.map((i) => i.id))
+    .select('id', 'claim_item_id', 'filename', 'mime_type', 'uploaded_at');
+  const receiptsByItem = {};
+  receipts.forEach((r) => {
+    if (!receiptsByItem[r.claim_item_id]) receiptsByItem[r.claim_item_id] = [];
+    receiptsByItem[r.claim_item_id].push(r);
+  });
+  const itemsWithReceipts = items.map((i) => ({ ...i, receipts: receiptsByItem[i.id] || [] }));
+
   const auditLog = await db('audit_logs')
     .join('users', 'audit_logs.user_id', 'users.id')
     .where('audit_logs.claim_id', claim.id)
@@ -91,7 +103,7 @@ router.get('/:id', async (req, res) => {
     .orderBy('audit_logs.created_at', 'asc');
 
   res.set('Cache-Control', 'no-store');
-  res.json({ ...claim, items, audit_log: auditLog });
+  res.json({ ...claim, items: itemsWithReceipts, audit_log: auditLog });
 });
 
 // PUT /api/claims/:id

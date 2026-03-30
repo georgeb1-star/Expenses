@@ -10,7 +10,8 @@ import { StatusTimeline } from '../../components/StatusTimeline';
 import { ConfirmModal } from '../../components/ConfirmModal';
 import { ItemForm } from './ItemForm';
 import { formatCurrency, formatDate } from '../../lib/utils';
-import { AlertCircle, AlertTriangle, Plus, Trash2, Upload, MessageSquare, CheckCircle2, ArrowLeft } from 'lucide-react';
+import { AlertCircle, AlertTriangle, Plus, Trash2, Upload, MessageSquare, CheckCircle2, ArrowLeft, FileText, ExternalLink } from 'lucide-react';
+import api from '../../api/client';
 
 const TABS = ['Details', 'Alerts', 'Comments', 'Receipts'];
 
@@ -104,6 +105,17 @@ export default function ClaimDetail() {
   const handleReceiptUpload = async (itemId, file) => {
     await receiptsApi.upload(id, itemId, file);
     await load();
+  };
+
+  const viewReceipt = async (receiptId, filename) => {
+    const { data } = await api.get(`/receipts/${receiptId}`, { responseType: 'blob' });
+    const url = URL.createObjectURL(data);
+    const a = document.createElement('a');
+    a.href = url;
+    a.target = '_blank';
+    a.rel = 'noopener noreferrer';
+    a.click();
+    setTimeout(() => URL.revokeObjectURL(url), 10000);
   };
 
   const handleDeleteItem = async (itemId) => {
@@ -589,28 +601,59 @@ export default function ClaimDetail() {
                 <p className="text-sm text-gray-500 py-4">No expense items on this claim.</p>
               )}
               {allItems.filter((i) => i.type === 'expense').map((item) => (
-                <div key={item.id} className="flex items-center justify-between p-4 border border-gray-200 rounded">
-                  <div>
-                    <p className="text-sm font-medium text-gray-900">
-                      {item.expense_type}
-                    </p>
-                    <p className="text-xs text-gray-500 mt-0.5">
-                      {formatDate(item.transaction_date)} · {formatCurrency(item.amount)}
-                    </p>
+                <div key={item.id} className="border border-gray-200 rounded p-4 space-y-3">
+                  {/* Item summary */}
+                  <div className="flex items-start justify-between gap-4">
+                    <div>
+                      <p className="text-sm font-medium text-gray-900">{item.expense_type}</p>
+                      <p className="text-xs text-gray-500 mt-0.5">
+                        {formatDate(item.transaction_date)} · {formatCurrency(item.amount)}
+                        {item.vat > 0 && <span> · VAT {formatCurrency(item.vat)}</span>}
+                        {item.supplier && <span> · {item.supplier}</span>}
+                      </p>
+                      {item.business_purpose && (
+                        <p className="text-xs text-gray-500 mt-0.5">{item.business_purpose}</p>
+                      )}
+                      <div className="flex flex-wrap gap-2 mt-1.5">
+                        {item.department && <span className="text-[11px] px-1.5 py-0.5 bg-gray-100 text-gray-600 rounded">{item.department}</span>}
+                        {item.project && <span className="text-[11px] px-1.5 py-0.5 bg-gray-100 text-gray-600 rounded">Project: {item.project}</span>}
+                        {item.payment_type && <span className="text-[11px] px-1.5 py-0.5 bg-gray-100 text-gray-600 rounded">{item.payment_type}</span>}
+                        {item.billable && <span className="text-[11px] px-1.5 py-0.5 bg-red-50 text-red-700 rounded">Billable — {item.client_name}</span>}
+                      </div>
+                    </div>
+                    {canEdit && (
+                      <label className="cursor-pointer flex-shrink-0">
+                        <span className="inline-flex items-center gap-1.5 text-sm text-red-700 hover:text-red-800 font-medium">
+                          <Upload className="w-3.5 h-3.5" />
+                          Upload receipt
+                        </span>
+                        <input
+                          type="file"
+                          accept="image/*,.pdf"
+                          className="hidden"
+                          onChange={(e) => handleReceiptUpload(item.id, e.target.files[0])}
+                        />
+                      </label>
+                    )}
                   </div>
-                  {canEdit && (
-                    <label className="cursor-pointer">
-                      <span className="inline-flex items-center gap-1.5 text-sm text-red-700 hover:text-red-800 font-medium">
-                        <Upload className="w-3.5 h-3.5" />
-                        Upload receipt
-                      </span>
-                      <input
-                        type="file"
-                        accept="image/*,.pdf"
-                        className="hidden"
-                        onChange={(e) => handleReceiptUpload(item.id, e.target.files[0])}
-                      />
-                    </label>
+
+                  {/* Receipts for this item */}
+                  {item.receipts?.length > 0 ? (
+                    <div className="space-y-1.5 pt-2 border-t border-gray-100">
+                      {item.receipts.map((r) => (
+                        <button
+                          key={r.id}
+                          onClick={() => viewReceipt(r.id, r.filename)}
+                          className="flex items-center gap-2 text-sm text-red-700 hover:text-red-800 font-medium"
+                        >
+                          <FileText className="w-3.5 h-3.5" />
+                          {r.filename}
+                          <ExternalLink className="w-3 h-3 opacity-60" />
+                        </button>
+                      ))}
+                    </div>
+                  ) : (
+                    <p className="text-xs text-gray-400 pt-2 border-t border-gray-100">No receipt uploaded</p>
                   )}
                 </div>
               ))}

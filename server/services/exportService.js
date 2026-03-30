@@ -10,7 +10,8 @@ function toCsv(rows) {
     return s;
   };
   const lines = [headers.join(','), ...rows.map((r) => headers.map((h) => escape(r[h])).join(','))];
-  return lines.join('\r\n');
+  // UTF-8 BOM so Excel opens the file correctly without garbling characters
+  return '\uFEFF' + lines.join('\r\n');
 }
 
 async function generateBatchCsv(batchId) {

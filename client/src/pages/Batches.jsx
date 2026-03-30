@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
+import api from '../api/client';
 import { batchesApi } from '../api';
 import { Button } from '../components/ui/Button';
 import { formatDate } from '../lib/utils';
@@ -13,21 +14,18 @@ export default function Batches() {
     batchesApi.list().then((r) => setBatches(r.data)).finally(() => setLoading(false));
   }, []);
 
-  const handleExport = (batch) => {
-    const token = localStorage.getItem('token');
-    fetch(batchesApi.exportUrl(batch.id), { headers: { Authorization: `Bearer ${token}` } })
-      .then((r) => r.blob())
-      .then((blob) => {
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = `batch-${batch.name.replace(/[^a-z0-9]/gi, '_')}.csv`;
-        a.click();
-        URL.revokeObjectURL(url);
-        setBatches((prev) =>
-          prev.map((b) => b.id === batch.id ? { ...b, exported_at: new Date().toISOString() } : b)
-        );
-      });
+  const handleExport = async (batch) => {
+    const { data } = await api.get(`/batches/${batch.id}/export`, { responseType: 'blob' });
+    const blob = new Blob([data], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `batch-${batch.name.replace(/[^a-z0-9]/gi, '_')}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+    setBatches((prev) =>
+      prev.map((b) => b.id === batch.id ? { ...b, exported_at: new Date().toISOString() } : b)
+    );
   };
 
   return (

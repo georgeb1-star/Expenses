@@ -85,7 +85,7 @@ export function ItemForm({ claimId, item, onSave, onCancel }) {
       <div className="grid grid-cols-2 gap-4">
         <div className="space-y-2">
           <label className="text-sm font-medium">Date *</label>
-          <Input type="date" value={form.transaction_date} onChange={set('transaction_date')} required />
+          <Input type="date" value={form.transaction_date} onChange={set('transaction_date')} required max={new Date().toISOString().slice(0, 10)} />
         </div>
         <div className="space-y-2">
           <label className="text-sm font-medium">Payment Type</label>

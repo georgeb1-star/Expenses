@@ -66,6 +66,12 @@ router.put('/:itemId', async (req, res, next) => {
     delete updates.id;
     delete updates.claim_id;
 
+    // Coerce empty strings to proper types for numeric columns
+    if (updates.amount === '') updates.amount = 0;
+    if (updates.vat === '') updates.vat = 0;
+    if (updates.distance === '') updates.distance = null;
+    if (updates.passengers === '') updates.passengers = null;
+
     if (updates.type === 'mileage' && updates.distance) {
       updates.reimbursement_amount = await calculateReimbursement(
         req.user.id, updates.distance, updates.transaction_date || item.transaction_date, item.id

@@ -170,18 +170,17 @@ router.post('/:id/submit', async (req, res) => {
 router.post('/:id/approve', async (req, res) => {
   if (!['manager', 'admin'].includes(req.user.role)) return res.status(403).json({ error: 'Forbidden' });
   const { comment } = req.body;
+  try {
+    const claim = await db('claims').where({ id: req.params.id }).first();
+    if (!claim) return res.status(404).json({ error: 'Claim not found' });
 
-  const claim = await db('claims').where({ id: req.params.id }).first();
-  if (!claim) return res.status(404).json({ error: 'Claim not found' });
-
-  const updated = await transition(claim.id, 'approve', req.user.id, { comment });
-
-  if (comment) {
-    await db('comments').insert({ claim_id: claim.id, user_id: req.user.id, message: comment });
+    const updated = await transition(claim.id, 'approve', req.user.id, { comment });
+    if (comment) await db('comments').insert({ claim_id: claim.id, user_id: req.user.id, message: comment });
+    await notify([claim.user_id], claim.id, `Your claim "${claim.title}" has been approved by ${req.user.name}`);
+    res.json(updated);
+  } catch (err) {
+    res.status(err.status || 500).json({ error: err.message || 'Approve failed' });
   }
-
-  await notify([claim.user_id], claim.id, `Your claim "${claim.title}" has been approved by ${req.user.name}`);
-  res.json(updated);
 });
 
 // POST /api/claims/:id/reject  (manager)
@@ -189,28 +188,34 @@ router.post('/:id/reject', async (req, res) => {
   if (!['manager', 'admin'].includes(req.user.role)) return res.status(403).json({ error: 'Forbidden' });
   const { comment } = req.body;
   if (!comment) return res.status(400).json({ error: 'A comment is required when rejecting' });
+  try {
+    const claim = await db('claims').where({ id: req.params.id }).first();
+    if (!claim) return res.status(404).json({ error: 'Claim not found' });
 
-  const claim = await db('claims').where({ id: req.params.id }).first();
-  if (!claim) return res.status(404).json({ error: 'Claim not found' });
-
-  const updated = await transition(claim.id, 'reject', req.user.id, { comment });
-  await db('comments').insert({ claim_id: claim.id, user_id: req.user.id, message: comment });
-  await notify([claim.user_id], claim.id, `Your claim "${claim.title}" was sent back by ${req.user.name}: ${comment}`);
-  res.json(updated);
+    const updated = await transition(claim.id, 'reject', req.user.id, { comment });
+    await db('comments').insert({ claim_id: claim.id, user_id: req.user.id, message: comment });
+    await notify([claim.user_id], claim.id, `Your claim "${claim.title}" was sent back by ${req.user.name}: ${comment}`);
+    res.json(updated);
+  } catch (err) {
+    res.status(err.status || 500).json({ error: err.message || 'Reject failed' });
+  }
 });
 
 // POST /api/claims/:id/audit-approve  (processor)
 router.post('/:id/audit-approve', async (req, res) => {
   if (!['processor', 'admin'].includes(req.user.role)) return res.status(403).json({ error: 'Forbidden' });
   const { comment } = req.body;
+  try {
+    const claim = await db('claims').where({ id: req.params.id }).first();
+    if (!claim) return res.status(404).json({ error: 'Claim not found' });
 
-  const claim = await db('claims').where({ id: req.params.id }).first();
-  if (!claim) return res.status(404).json({ error: 'Claim not found' });
-
-  const updated = await transition(claim.id, 'audit_approve', req.user.id, { comment });
-  if (comment) await db('comments').insert({ claim_id: claim.id, user_id: req.user.id, message: comment });
-  await notify([claim.user_id], claim.id, `Your claim "${claim.title}" passed audit and is being processed`);
-  res.json(updated);
+    const updated = await transition(claim.id, 'audit_approve', req.user.id, { comment });
+    if (comment) await db('comments').insert({ claim_id: claim.id, user_id: req.user.id, message: comment });
+    await notify([claim.user_id], claim.id, `Your claim "${claim.title}" passed audit and is being processed`);
+    res.json(updated);
+  } catch (err) {
+    res.status(err.status || 500).json({ error: err.message || 'Audit approve failed' });
+  }
 });
 
 // POST /api/claims/:id/audit-reject  (processor)
@@ -218,16 +223,18 @@ router.post('/:id/audit-reject', async (req, res) => {
   if (!['processor', 'admin'].includes(req.user.role)) return res.status(403).json({ error: 'Forbidden' });
   const { comment } = req.body;
   if (!comment) return res.status(400).json({ error: 'A comment is required when rejecting audit' });
+  try {
+    const claim = await db('claims').where({ id: req.params.id }).first();
+    if (!claim) return res.status(404).json({ error: 'Claim not found' });
 
-  const claim = await db('claims').where({ id: req.params.id }).first();
-  if (!claim) return res.status(404).json({ error: 'Claim not found' });
-
-  // Remove from batch
-  await db('claims').where({ id: claim.id }).update({ batch_id: null });
-  const updated = await transition(claim.id, 'audit_reject', req.user.id, { comment });
-  await db('comments').insert({ claim_id: claim.id, user_id: req.user.id, message: comment });
-  await notify([claim.user_id, claim.manager_id], claim.id, `Claim "${claim.title}" failed audit: ${comment}`);
-  res.json(updated);
+    await db('claims').where({ id: claim.id }).update({ batch_id: null });
+    const updated = await transition(claim.id, 'audit_reject', req.user.id, { comment });
+    await db('comments').insert({ claim_id: claim.id, user_id: req.user.id, message: comment });
+    await notify([claim.user_id, claim.manager_id], claim.id, `Claim "${claim.title}" failed audit: ${comment}`);
+    res.json(updated);
+  } catch (err) {
+    res.status(err.status || 500).json({ error: err.message || 'Audit reject failed' });
+  }
 });
 
 module.exports = router;

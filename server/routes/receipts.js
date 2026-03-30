@@ -151,10 +151,18 @@ standalone.post('/analyze', upload.single('file'), async (req, res) => {
   }
 
   try {
+    // Resize and compress to stay under OCR.space's 1MB free-tier limit
+    const sharp = require('sharp');
+    const compressed = await sharp(req.file.buffer)
+      .rotate()                        // fix EXIF orientation
+      .resize({ width: 2000, height: 2000, fit: 'inside', withoutEnlargement: true })
+      .jpeg({ quality: 82 })
+      .toBuffer();
+
     const form = new FormData();
-    form.append('file', req.file.buffer, {
-      filename: req.file.originalname,
-      contentType: req.file.mimetype,
+    form.append('file', compressed, {
+      filename: 'receipt.jpg',
+      contentType: 'image/jpeg',
     });
     form.append('language', 'eng');
     form.append('detectOrientation', 'true');   // auto-rotates

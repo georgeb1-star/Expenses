@@ -23,19 +23,31 @@ function parseReceiptText(raw) {
   const text = raw;
   const upper = raw.toUpperCase();
 
-  // --- Supplier: first "clean" line that looks like a business name ---
-  // Reject lines with too many noise chars (|, [, ], \, /, numbers dominating, etc.)
-  const supplier = lines.find((l) => {
-    if (l.length < 3) return false;
-    // Must have at least one word of 3+ consecutive letters
-    if (!/[a-zA-Z]{3,}/.test(l)) return false;
-    // Noise ratio: non-(letter/space/&/'-.) chars must be < 30% of line length
-    const noiseChars = (l.match(/[^a-zA-Z\s&'\-\.]/g) || []).length;
-    if (noiseChars / l.length > 0.3) return false;
-    // Skip lines that look like amounts or dates
-    if (/^\d[\d\s\/\-\.£$€:]+$/.test(l)) return false;
-    return true;
-  }) || null;
+  // --- Supplier ---
+  // 1. Try "Thank you for shopping with/at <Name>" — plain text, reliable
+  let supplier = null;
+  const thankYouMatch = text.match(/thank\s+you\s+for\s+shopping\s+(?:with|at)\s+([A-Za-z][A-Za-z0-9\s&'.,-]{1,40})/i);
+  if (thankYouMatch) {
+    supplier = thankYouMatch[1].trim().replace(/\s+/g, ' ');
+  }
+  // 2. Try website URL — e.g. www.ryman.co.uk → "Ryman"
+  if (!supplier) {
+    const urlMatch = text.match(/www\.([a-z0-9][a-z0-9\-]*)\.[a-z]{2,}/i);
+    if (urlMatch) {
+      supplier = urlMatch[1].charAt(0).toUpperCase() + urlMatch[1].slice(1).toLowerCase();
+    }
+  }
+  // 3. Fall back: first clean line with a real word (4+ letters, low noise)
+  if (!supplier) {
+    supplier = lines.find((l) => {
+      if (l.length < 3) return false;
+      if (!/[a-zA-Z]{4,}/.test(l)) return false;
+      const noiseChars = (l.match(/[^a-zA-Z\s&'\-\.]/g) || []).length;
+      if (noiseChars / l.length > 0.25) return false;
+      if (/^\d/.test(l)) return false;
+      return true;
+    }) || null;
+  }
 
   // --- Amount: prefer TOTAL / AMOUNT DUE line, fall back to largest £ figure ---
   let amount = null;
@@ -51,18 +63,20 @@ function parseReceiptText(raw) {
     if (allAmounts.length) amount = Math.max(...allAmounts);
   }
 
-  // --- VAT ---
+  // --- VAT: match "VAT 2.00" or "VAT: £2.00" or "Tax 2.00" ---
   let vat = 0;
-  const vatMatch = text.match(/(?:vat|tax|gst)[^£$€\d]*([\d,]+\.\d{2})/i);
+  const vatMatch = text.match(/(?:vat|tax|gst)\s*[:%]?\s*[0-9]*\s*[£$€]?\s*([\d,]+\.\d{2})/i);
   if (vatMatch) vat = parseFloat(vatMatch[1].replace(',', ''));
 
-  // --- Date: try common UK formats first ---
+  // --- Date: try common UK formats ---
   let transaction_date = null;
   const datePatterns = [
     // YYYY-MM-DD
     { re: /(\d{4})[\/\-\.](\d{1,2})[\/\-\.](\d{1,2})/, fn: (m) => `${m[1]}-${m[2].padStart(2,'0')}-${m[3].padStart(2,'0')}` },
-    // DD/MM/YYYY  (UK default)
+    // DD/MM/YYYY (UK default)
     { re: /(\d{1,2})[\/\-\.](\d{1,2})[\/\-\.](\d{4})/, fn: (m) => `${m[3]}-${m[2].padStart(2,'0')}-${m[1].padStart(2,'0')}` },
+    // DD/MM/YY (2-digit year — common on till receipts)
+    { re: /(\d{1,2})[\/\-\.](\d{1,2})[\/\-\.](\d{2})(?!\d)/, fn: (m) => `20${m[3]}-${m[2].padStart(2,'0')}-${m[1].padStart(2,'0')}` },
     // DD Mon YYYY  e.g. 01 Jan 2026
     { re: /(\d{1,2})\s+(jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)[a-z]*\s+(\d{4})/i,
       fn: (m) => {

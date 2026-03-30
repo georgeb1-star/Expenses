@@ -1,20 +1,29 @@
 import React, { useEffect, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { claimsApi, reportsApi } from '../api';
 import { Card, CardHeader, CardTitle, CardContent } from '../components/ui/Card';
+import { Button } from '../components/ui/Button';
 import { StatusBadge } from '../components/StatusBadge';
+import { NewClaimModal } from '../components/NewClaimModal';
 import { formatCurrency, formatDate } from '../lib/utils';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
-import { FileText, Clock, CheckCircle, Send, ArrowRight, AlertCircle } from 'lucide-react';
+import { FileText, Clock, CheckCircle, Send, ArrowRight, AlertCircle, Plus } from 'lucide-react';
 
 const CATEGORY_COLORS = ['#CC1719', '#16A34A', '#D97706', '#7C3AED', '#0891B2', '#D97706'];
 
 export default function Dashboard() {
   const { user } = useAuth();
+  const navigate = useNavigate();
   const [claims, setClaims] = useState([]);
   const [summary, setSummary] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [showNewClaimModal, setShowNewClaimModal] = useState(false);
+
+  const handleCreate = async (title) => {
+    const { data } = await claimsApi.create({ title });
+    navigate(`/claims/${data.id}`);
+  };
 
   useEffect(() => {
     Promise.all([
@@ -48,10 +57,25 @@ export default function Dashboard() {
 
   return (
     <div className="space-y-7">
+      {showNewClaimModal && (
+        <NewClaimModal
+          onConfirm={handleCreate}
+          onCancel={() => setShowNewClaimModal(false)}
+        />
+      )}
+
       {/* Page header */}
-      <div>
-        <h1 className="text-xl font-semibold text-gray-900">Dashboard</h1>
-        <p className="text-sm text-gray-500 mt-0.5">Welcome back, {user.name}</p>
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-xl font-semibold text-gray-900">Dashboard</h1>
+          <p className="text-sm text-gray-500 mt-0.5">Welcome back, {user.name}</p>
+        </div>
+        {['employee', 'manager', 'admin'].includes(user.role) && (
+          <Button onClick={() => setShowNewClaimModal(true)} size="sm">
+            <Plus className="w-4 h-4 mr-1.5" />
+            New Claim
+          </Button>
+        )}
       </div>
 
       {/* KPI metrics */}

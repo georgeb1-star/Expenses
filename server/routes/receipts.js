@@ -1,22 +1,10 @@
 const router = require('express').Router({ mergeParams: true });
 const express = require('express');
 const multer = require('multer');
-const { createWorker } = require('tesseract.js');
-const sharp = require('sharp');
+const axios = require('axios');
+const FormData = require('form-data');
 const db = require('../db/connection');
 const authenticate = require('../middleware/auth');
-
-// Singleton OCR worker — initialised once, reused across requests
-let _ocrWorker = null;
-async function getOcrWorker() {
-  if (!_ocrWorker) {
-    _ocrWorker = await createWorker('eng', 1, {
-      cachePath: '/tmp/tesseract',
-      logger: () => {},
-    });
-  }
-  return _ocrWorker;
-}
 
 function parseReceiptText(raw) {
   const lines = raw.split('\n').map((l) => l.trim()).filter(Boolean);
@@ -24,20 +12,20 @@ function parseReceiptText(raw) {
   const upper = raw.toUpperCase();
 
   // --- Supplier ---
-  // 1. Try "Thank you for shopping with/at <Name>" — plain text, reliable
+  // 1. "Thank you for shopping with/at <Name>"
   let supplier = null;
   const thankYouMatch = text.match(/thank\s+you\s+for\s+shopping\s+(?:with|at)\s+([A-Za-z][A-Za-z0-9\s&'.,-]{1,40})/i);
   if (thankYouMatch) {
     supplier = thankYouMatch[1].trim().replace(/\s+/g, ' ');
   }
-  // 2. Try website URL — e.g. www.ryman.co.uk → "Ryman"
+  // 2. Website URL — www.ryman.co.uk → "Ryman"
   if (!supplier) {
     const urlMatch = text.match(/www\.([a-z0-9][a-z0-9\-]*)\.[a-z]{2,}/i);
     if (urlMatch) {
       supplier = urlMatch[1].charAt(0).toUpperCase() + urlMatch[1].slice(1).toLowerCase();
     }
   }
-  // 3. Fall back: first clean line with a real word (4+ letters, low noise)
+  // 3. First clean line with a real word (4+ letters, low noise)
   if (!supplier) {
     supplier = lines.find((l) => {
       if (l.length < 3) return false;
@@ -63,7 +51,7 @@ function parseReceiptText(raw) {
     if (allAmounts.length) amount = Math.max(...allAmounts);
   }
 
-  // --- VAT: match "VAT 2.00" or "VAT: £2.00" or "Tax 2.00" ---
+  // --- VAT ---
   let vat = 0;
   const vatMatch = text.match(/(?:vat|tax|gst)\s*[:%]?\s*[0-9]*\s*[£$€]?\s*([\d,]+\.\d{2})/i);
   if (vatMatch) vat = parseFloat(vatMatch[1].replace(',', ''));
@@ -100,7 +88,7 @@ function parseReceiptText(raw) {
     expense_type = 'Subsistence';
   else if (/PUB|BAR|WINE|BEER|SPIRITS|COCKTAIL|THEATRE|CINEMA|CONCERT|ENTERTAINMENT/.test(upper))
     expense_type = 'Entertainment';
-  else if (/EQUIPMENT|LAPTOP|COMPUTER|MONITOR|KEYBOARD|MOUSE|CABLE|HARDWARE|SUPPLIES|STATIONERY|OFFICE|AMAZON|CURRYS|PC WORLD/.test(upper))
+  else if (/EQUIPMENT|LAPTOP|COMPUTER|MONITOR|KEYBOARD|MOUSE|CABLE|HARDWARE|SUPPLIES|STATIONERY|OFFICE|AMAZON|CURRYS|PC WORLD|RYMAN/.test(upper))
     expense_type = 'Equipment';
 
   return { supplier, amount, vat, transaction_date, expense_type };
@@ -148,13 +136,7 @@ itemRouter.post('/', upload.single('file'), async (req, res) => {
 const standalone = express.Router();
 standalone.use(authenticate);
 
-// Score OCR text by counting clean alphabetic words (3+ letters).
-// Higher score = more readable = better rotation.
-function scoreOcrText(text) {
-  return (text.match(/\b[a-zA-Z]{3,}\b/g) || []).length;
-}
-
-// POST /api/receipts/analyze — OCR a receipt using Tesseract
+// POST /api/receipts/analyze — OCR via OCR.space
 standalone.post('/analyze', upload.single('file'), async (req, res) => {
   if (!req.file) return res.status(400).json({ error: 'No file provided' });
 
@@ -163,36 +145,35 @@ standalone.post('/analyze', upload.single('file'), async (req, res) => {
     return res.status(400).json({ error: 'Please upload a JPEG, PNG, or WebP image' });
   }
 
+  const apiKey = process.env.OCR_SPACE_API_KEY;
+  if (!apiKey) {
+    return res.status(500).json({ error: 'OCR service not configured (missing OCR_SPACE_API_KEY)' });
+  }
+
   try {
-    // Base pre-processing: EXIF auto-rotate, greyscale, boost contrast
-    const base = await sharp(req.file.buffer)
-      .rotate()
-      .grayscale()
-      .normalise()
-      .toFormat('png')
-      .toBuffer();
+    const form = new FormData();
+    form.append('file', req.file.buffer, {
+      filename: req.file.originalname,
+      contentType: req.file.mimetype,
+    });
+    form.append('language', 'eng');
+    form.append('detectOrientation', 'true');   // auto-rotates
+    form.append('scale', 'true');               // upscales small images
+    form.append('OCREngine', '2');              // Engine 2: better for photos
+    form.append('isOverlayRequired', 'false');
 
-    const { width, height } = await sharp(base).metadata();
-    const worker = await getOcrWorker();
+    const { data } = await axios.post('https://api.ocr.space/parse/image', form, {
+      headers: { ...form.getHeaders(), apikey: apiKey },
+      timeout: 30000,
+    });
 
-    let bestText = '';
-    let bestScore = -1;
-
-    // If the image is landscape (wider than tall), the receipt was likely
-    // photographed sideways. Try 0° and 90° and pick whichever scores better.
-    const rotations = width > height ? [0, 90] : [0];
-
-    for (const angle of rotations) {
-      const buf = angle === 0
-        ? base
-        : await sharp(base).rotate(angle).toBuffer();
-      const { data: { text } } = await worker.recognize(buf);
-      const score = scoreOcrText(text);
-      if (score > bestScore) { bestScore = score; bestText = text; }
+    if (data.IsErroredOnProcessing) {
+      throw new Error(data.ErrorMessage?.[0] || 'OCR processing failed');
     }
 
-    console.log('OCR best text:', bestText.slice(0, 300));
-    const extracted = parseReceiptText(bestText);
+    const text = data.ParsedResults?.[0]?.ParsedText || '';
+    console.log('OCR text:', text.slice(0, 300));
+    const extracted = parseReceiptText(text);
     res.json(extracted);
   } catch (err) {
     console.error('OCR error:', err.message);
@@ -220,7 +201,6 @@ standalone.get('/:id', async (req, res) => {
 
   res.setHeader('Content-Type', receipt.mime_type);
   res.setHeader('Content-Disposition', `inline; filename="${receipt.filename}"`);
-  // receipt.data comes back as a Buffer from pg
   res.send(Buffer.isBuffer(receipt.data) ? receipt.data : Buffer.from(receipt.data));
 });
 

@@ -7,6 +7,7 @@ import { Button } from '../../components/ui/Button';
 import { Textarea } from '../../components/ui/Textarea';
 import { StatusBadge } from '../../components/StatusBadge';
 import { StatusTimeline } from '../../components/StatusTimeline';
+import { ConfirmModal } from '../../components/ConfirmModal';
 import { ItemForm } from './ItemForm';
 import { formatCurrency, formatDate } from '../../lib/utils';
 import { AlertCircle, AlertTriangle, Plus, Trash2, Upload, MessageSquare, CheckCircle2, ArrowLeft } from 'lucide-react';
@@ -28,6 +29,8 @@ export default function ClaimDetail() {
   const [actionComment, setActionComment] = useState('');
   const [actionLoading, setActionLoading] = useState(false);
   const [error, setError] = useState('');
+  const [confirmDelete, setConfirmDelete] = useState(false);
+  const [confirmDeleteItemId, setConfirmDeleteItemId] = useState(null);
 
   const isOwner = claim?.user_id === user.id;
   const isDraft = claim?.status === 'draft';
@@ -86,7 +89,6 @@ export default function ClaimDetail() {
   };
 
   const handleDelete = async () => {
-    if (!confirm('Permanently delete this claim? This cannot be undone.')) return;
     await claimsApi.delete(id);
     navigate('/claims');
   };
@@ -102,8 +104,8 @@ export default function ClaimDetail() {
   };
 
   const handleDeleteItem = async (itemId) => {
-    if (!confirm('Remove this expense item?')) return;
     await itemsApi.delete(id, itemId);
+    setConfirmDeleteItemId(null);
     await load();
   };
 
@@ -126,6 +128,27 @@ export default function ClaimDetail() {
 
   return (
     <div className="space-y-5">
+      {confirmDelete && (
+        <ConfirmModal
+          title="Delete claim"
+          message="Permanently delete this claim? This cannot be undone."
+          confirmLabel="Delete"
+          danger
+          onConfirm={handleDelete}
+          onCancel={() => setConfirmDelete(false)}
+        />
+      )}
+      {confirmDeleteItemId && (
+        <ConfirmModal
+          title="Remove item"
+          message="Remove this expense item from the claim?"
+          confirmLabel="Remove"
+          danger
+          onConfirm={() => handleDeleteItem(confirmDeleteItemId)}
+          onCancel={() => setConfirmDeleteItemId(null)}
+        />
+      )}
+
       {/* Back link */}
       <button
         onClick={() => navigate(-1)}
@@ -153,7 +176,7 @@ export default function ClaimDetail() {
             <Button
               variant="outline"
               size="sm"
-              onClick={handleDelete}
+              onClick={() => setConfirmDelete(true)}
               className="text-red-600 border-red-200 hover:bg-red-50 hover:border-red-300"
             >
               <Trash2 className="w-3.5 h-3.5 mr-1.5" />
@@ -414,7 +437,7 @@ export default function ClaimDetail() {
                               Edit
                             </button>
                             <button
-                              onClick={() => handleDeleteItem(item.id)}
+                              onClick={() => setConfirmDeleteItemId(item.id)}
                               className="text-xs text-red-500 hover:text-red-700 font-medium"
                             >
                               Remove

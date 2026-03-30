@@ -1,26 +1,36 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { Card, CardHeader, CardTitle, CardContent } from '../components/ui/Card';
 import { Button } from '../components/ui/Button';
 import { Input } from '../components/ui/Input';
 import { Select } from '../components/ui/Select';
+import api from '../api/client';
 
 export default function Register() {
   const { register } = useAuth();
   const navigate = useNavigate();
-  const [form, setForm] = useState({ name: '', email: '', password: '', role: 'employee', department: '', employee_id: '' });
+  const [form, setForm] = useState({ name: '', email: '', password: '', role: 'employee', department: '', employee_id: '', manager_id: '' });
+  const [managers, setManagers] = useState([]);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    api.get('/auth/managers').then((r) => setManagers(r.data)).catch(() => {});
+  }, []);
 
   const set = (field) => (e) => setForm({ ...form, [field]: e.target.value });
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
+    if (form.role === 'employee' && !form.manager_id) {
+      setError('Employees must select a manager.');
+      return;
+    }
     setLoading(true);
     try {
-      await register(form);
+      await register({ ...form, manager_id: form.manager_id || null });
       navigate('/dashboard');
     } catch (err) {
       setError(err.response?.data?.error || 'Registration failed');
@@ -70,6 +80,20 @@ export default function Register() {
                 <label className="text-sm font-medium">Department</label>
                 <Input value={form.department} onChange={set('department')} placeholder="Sales" />
               </div>
+              {form.role === 'employee' && (
+                <div className="space-y-2">
+                  <label className="text-sm font-medium">Reports to *</label>
+                  <Select value={form.manager_id} onChange={set('manager_id')} required>
+                    <option value="">Select manager…</option>
+                    {managers.map((m) => (
+                      <option key={m.id} value={m.id}>{m.name}{m.department ? ` — ${m.department}` : ''}</option>
+                    ))}
+                  </Select>
+                  {managers.length === 0 && (
+                    <p className="text-xs text-amber-600">No managers found. A manager account must be created first.</p>
+                  )}
+                </div>
+              )}
               <Button type="submit" className="w-full" disabled={loading}>
                 {loading ? 'Creating account…' : 'Create account'}
               </Button>

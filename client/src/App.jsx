@@ -13,6 +13,7 @@ import Approvals from './pages/Approvals';
 import Finance from './pages/Finance';
 import Batches from './pages/Batches';
 import Notifications from './pages/Notifications';
+import Profile from './pages/Profile';
 
 function AppLayout({ children, roles }) {
   return (
@@ -39,6 +40,7 @@ export default function App() {
           <Route path="/finance" element={<AppLayout roles={['processor', 'admin']}><Finance /></AppLayout>} />
           <Route path="/batches" element={<AppLayout roles={['processor', 'admin']}><Batches /></AppLayout>} />
           <Route path="/notifications" element={<AppLayout><Notifications /></AppLayout>} />
+          <Route path="/profile" element={<AppLayout><Profile /></AppLayout>} />
 
           <Route path="/" element={<Navigate to="/dashboard" replace />} />
           <Route path="*" element={<Navigate to="/dashboard" replace />} />

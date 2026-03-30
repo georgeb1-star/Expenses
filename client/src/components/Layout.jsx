@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { Link, NavLink, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { notificationsApi } from '../api';
-import { Bell, ReceiptText, LayoutDashboard, ClipboardCheck, Landmark, Package, LogOut, ChevronRight } from 'lucide-react';
+import { Bell, ReceiptText, LayoutDashboard, ClipboardCheck, Landmark, Package, LogOut, ChevronRight, UserCog } from 'lucide-react';
 import { cn } from '../lib/utils';
 
 const ROLE_LABELS = {
@@ -99,6 +99,16 @@ export function Layout({ children }) {
 
         {/* User footer */}
         <div className="border-t border-gray-200 p-3">
+          <NavLink
+            to="/profile"
+            className={({ isActive }) =>
+              cn('flex items-center gap-2 px-3 py-1.5 rounded text-xs mb-1 transition-colors',
+                isActive ? 'bg-red-50 text-red-700 font-medium' : 'text-gray-500 hover:bg-gray-100 hover:text-gray-700')
+            }
+          >
+            <UserCog className="w-3.5 h-3.5 flex-shrink-0" />
+            Profile &amp; Settings
+          </NavLink>
           <div className="flex items-center gap-2.5 px-2 py-2 rounded hover:bg-gray-50 group">
             <div className="w-7 h-7 rounded-full bg-red-100 flex items-center justify-center flex-shrink-0">
               <span className="text-[10px] font-semibold text-red-700">{initials}</span>

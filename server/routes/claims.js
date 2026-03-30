@@ -21,12 +21,12 @@ router.get('/', async (req, res) => {
 
   if (role === 'employee') query = query.where('claims.user_id', userId);
   else if (role === 'manager') {
-    // Manager sees claims explicitly assigned to them, plus their own claims,
-    // plus any claims from employees whose manager_id points to them
     const team = await db('users').where({ manager_id: userId }).pluck('id');
     query = query.where((q) => {
       q.where('claims.manager_id', userId)
-        .orWhereIn('claims.user_id', [...team, userId]);
+        .orWhereIn('claims.user_id', [...team, userId])
+        // Unassigned submitted claims are visible to all managers so nothing gets stuck
+        .orWhere((q2) => q2.whereNull('claims.manager_id').whereIn('claims.status', ['submitted', 'manager_review']));
     });
   }
   // processor / admin see all
@@ -140,6 +140,9 @@ router.post('/:id/submit', async (req, res) => {
   // Determine manager
   const owner = await db('users').where({ id: req.user.id }).first();
   const managerId = owner.manager_id;
+  if (!managerId) {
+    return res.status(422).json({ error: 'Your account has no manager assigned. Ask an admin to set your manager before submitting.' });
+  }
 
   await db('claims').where({ id: claim.id }).update({ manager_id: managerId, updated_at: db.fn.now() });
 

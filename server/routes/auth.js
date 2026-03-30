@@ -12,6 +12,15 @@ function signToken(user) {
   );
 }
 
+// GET /api/auth/managers — public list of managers for registration form
+router.get('/managers', async (req, res) => {
+  const managers = await db('users')
+    .whereIn('role', ['manager', 'admin'])
+    .select('id', 'name', 'department')
+    .orderBy('name');
+  res.json(managers);
+});
+
 // POST /api/auth/register
 router.post('/register', async (req, res) => {
   const { name, email, password, role = 'employee', department, employee_id, manager_id } = req.body;
@@ -51,6 +60,21 @@ router.get('/me', authenticate, async (req, res) => {
     .select('id', 'name', 'email', 'role', 'department', 'employee_id', 'manager_id', 'created_at')
     .first();
   if (!user) return res.status(404).json({ error: 'User not found' });
+  res.json(user);
+});
+
+// PATCH /api/auth/me — update own profile (name, department, manager_id)
+router.patch('/me', authenticate, async (req, res) => {
+  const { name, department, manager_id } = req.body;
+  const updates = {};
+  if (name !== undefined) updates.name = name;
+  if (department !== undefined) updates.department = department;
+  if (manager_id !== undefined) updates.manager_id = manager_id || null;
+
+  const [user] = await db('users')
+    .where({ id: req.user.id })
+    .update({ ...updates, updated_at: db.fn.now() })
+    .returning(['id', 'name', 'email', 'role', 'department', 'employee_id', 'manager_id']);
   res.json(user);
 });
 

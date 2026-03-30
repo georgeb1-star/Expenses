@@ -90,6 +90,7 @@ router.get('/:id', async (req, res) => {
     .select('audit_logs.*', 'users.name as user_name')
     .orderBy('audit_logs.created_at', 'asc');
 
+  res.set('Cache-Control', 'no-store');
   res.json({ ...claim, items, audit_log: auditLog });
 });
 

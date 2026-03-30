@@ -37,15 +37,18 @@ export default function ClaimDetail() {
   const canEdit = isOwner && isDraft;
 
   const load = async () => {
-    const [claimRes, alertsRes, commentsRes] = await Promise.all([
-      claimsApi.get(id),
-      alertsApi.list(id),
-      commentsApi.list(id),
-    ]);
-    setClaim(claimRes.data);
-    setAlerts(alertsRes.data);
-    setComments(commentsRes.data);
-    setLoading(false);
+    try {
+      const [claimRes, alertsRes, commentsRes] = await Promise.all([
+        claimsApi.get(id),
+        alertsApi.list(id),
+        commentsApi.list(id),
+      ]);
+      setClaim(claimRes.data);
+      setAlerts(alertsRes.data);
+      setComments(commentsRes.data);
+    } finally {
+      setLoading(false);
+    }
   };
 
   useEffect(() => { load(); }, [id]);

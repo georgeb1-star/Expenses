@@ -16,8 +16,7 @@ export function formatDate(date) {
 
 export const STATUS_LABELS = {
   draft: 'Draft',
-  submitted: 'Submitted',
-  manager_review: 'Manager Review',
+  manager_review: 'Under Review',
   approved: 'Approved',
   audit: 'Audit',
   processing: 'Processing',
@@ -26,7 +25,6 @@ export const STATUS_LABELS = {
 
 export const STATUS_COLORS = {
   draft:          'bg-gray-100 text-gray-600',
-  submitted:      'bg-blue-50 text-blue-700',
   manager_review: 'bg-amber-50 text-amber-700',
   approved:       'bg-green-50 text-green-700',
   audit:          'bg-purple-50 text-purple-700',
@@ -35,5 +33,5 @@ export const STATUS_COLORS = {
 };
 
 export const STATUS_STEPS = [
-  'draft', 'submitted', 'manager_review', 'approved', 'audit', 'processing', 'exported'
+  'draft', 'manager_review', 'approved', 'audit', 'processing', 'exported'
 ];

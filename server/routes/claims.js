@@ -3,6 +3,7 @@ const db = require('../db/connection');
 const authenticate = require('../middleware/auth');
 const { transition, notify } = require('../services/workflowEngine');
 const { runAlertEngine } = require('../services/alertEngine');
+const emailService = require('../services/emailService');
 
 router.use(authenticate);
 
@@ -176,6 +177,17 @@ router.post('/:id/submit', async (req, res) => {
 
   await notify([managerId], claim.id, `New claim submitted by ${req.user.name}: "${claim.title}"`);
 
+  const manager = await db('users').where({ id: managerId }).first();
+  if (manager) {
+    emailService.claimSubmitted({
+      managerEmail: manager.email,
+      managerName: manager.name,
+      employeeName: req.user.name,
+      claimTitle: claim.title,
+      claimId: claim.id,
+    });
+  }
+
   res.json(updated);
 });
 
@@ -190,6 +202,17 @@ router.post('/:id/approve', async (req, res) => {
     const updated = await transition(claim.id, 'approve', req.user.id, { comment });
     if (comment) await db('comments').insert({ claim_id: claim.id, user_id: req.user.id, message: comment });
     await notify([claim.user_id], claim.id, `Your claim "${claim.title}" has been approved by ${req.user.name}`);
+
+    const employee = await db('users').where({ id: claim.user_id }).first();
+    if (employee) {
+      emailService.claimApproved({
+        employeeEmail: employee.email,
+        employeeName: employee.name,
+        claimTitle: claim.title,
+        claimId: claim.id,
+        managerName: req.user.name,
+      });
+    }
     res.json(updated);
   } catch (err) {
     res.status(err.status || 500).json({ error: err.message || 'Approve failed' });
@@ -208,6 +231,18 @@ router.post('/:id/reject', async (req, res) => {
     const updated = await transition(claim.id, 'reject', req.user.id, { comment });
     await db('comments').insert({ claim_id: claim.id, user_id: req.user.id, message: comment });
     await notify([claim.user_id], claim.id, `Your claim "${claim.title}" was sent back by ${req.user.name}: ${comment}`);
+
+    const employee = await db('users').where({ id: claim.user_id }).first();
+    if (employee) {
+      emailService.claimRejected({
+        employeeEmail: employee.email,
+        employeeName: employee.name,
+        claimTitle: claim.title,
+        claimId: claim.id,
+        managerName: req.user.name,
+        comment,
+      });
+    }
     res.json(updated);
   } catch (err) {
     res.status(err.status || 500).json({ error: err.message || 'Reject failed' });
@@ -259,6 +294,22 @@ router.post('/:id/audit-reject', async (req, res) => {
     const updated = await transition(claim.id, 'audit_reject', req.user.id, { comment });
     await db('comments').insert({ claim_id: claim.id, user_id: req.user.id, message: comment });
     await notify([claim.user_id, claim.manager_id], claim.id, `Claim "${claim.title}" failed audit: ${comment}`);
+
+    const [employee, manager] = await Promise.all([
+      db('users').where({ id: claim.user_id }).first(),
+      claim.manager_id ? db('users').where({ id: claim.manager_id }).first() : null,
+    ]);
+    if (employee && manager) {
+      emailService.auditRejected({
+        employeeEmail: employee.email,
+        employeeName: employee.name,
+        managerEmail: manager.email,
+        managerName: manager.name,
+        claimTitle: claim.title,
+        claimId: claim.id,
+        comment,
+      });
+    }
     res.json(updated);
   } catch (err) {
     res.status(err.status || 500).json({ error: err.message || 'Audit reject failed' });

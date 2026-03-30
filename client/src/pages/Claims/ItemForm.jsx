@@ -23,8 +23,8 @@ export function ItemForm({ claimId, item, onSave, onCancel }) {
     transaction_date: item?.transaction_date?.slice(0, 10) || '',
     amount: item?.amount || '',
     vat: item?.vat || '',
-    currency: item?.currency || 'GBP',
-    payment_type: item?.payment_type || '',
+    currency: item?.currency || localStorage.getItem('lastCurrency') || 'GBP',
+    payment_type: item?.payment_type || localStorage.getItem('lastPaymentType') || '',
     business_purpose: item?.business_purpose || '',
     department: item?.department || user?.department || '',
     project: item?.project || '',
@@ -84,6 +84,8 @@ export function ItemForm({ claimId, item, onSave, onCancel }) {
         const { data } = await itemsApi.create(claimId, payload);
         savedItem = data;
       }
+      if (form.payment_type) localStorage.setItem('lastPaymentType', form.payment_type);
+      if (form.currency) localStorage.setItem('lastCurrency', form.currency);
       if (file && !editing) {
         try {
           await receiptsApi.upload(claimId, savedItem.id, file);

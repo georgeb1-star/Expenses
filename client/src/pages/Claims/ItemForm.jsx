@@ -60,8 +60,9 @@ export function ItemForm({ claimId, item, onSave, onCancel }) {
         expense_type:     data.expense_type     || prev.expense_type,
       }));
       setScanned(true);
-    } catch {
-      // OCR failed silently — user fills in manually
+    } catch (err) {
+      const msg = err.response?.data?.error || 'Receipt scan failed — please fill in manually';
+      setError(msg);
     } finally {
       setScanning(false);
     }

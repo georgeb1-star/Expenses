@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { claimsApi } from '../../api';
 import { useAuth } from '../../context/AuthContext';
 import { Button } from '../../components/ui/Button';
@@ -23,9 +23,11 @@ const STATUS_OPTIONS = [
 export default function ClaimList() {
   const { user } = useAuth();
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
   const [claims, setClaims] = useState([]);
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
+  const [monthFilter, setMonthFilter] = useState(searchParams.get('month') || '');
   const [loading, setLoading] = useState(true);
   const [showNewClaimModal, setShowNewClaimModal] = useState(false);
 
@@ -44,7 +46,8 @@ export default function ClaimList() {
       c.title.toLowerCase().includes(search.toLowerCase()) ||
       c.owner_name?.toLowerCase().includes(search.toLowerCase());
     const matchStatus = !statusFilter || c.status === statusFilter;
-    return matchSearch && matchStatus;
+    const matchMonth = !monthFilter || (c.updated_at && c.updated_at.slice(0, 7) === monthFilter);
+    return matchSearch && matchStatus && matchMonth;
   });
 
   return (
@@ -89,12 +92,18 @@ export default function ClaimList() {
             <option key={opt.value} value={opt.value}>{opt.label}</option>
           ))}
         </select>
-        {(search || statusFilter) && (
+        {monthFilter && (
+          <div className="flex items-center gap-1.5 px-2.5 py-1 bg-red-50 border border-red-200 rounded text-xs text-red-700 font-medium">
+            {monthFilter}
+            <button onClick={() => setMonthFilter('')} className="hover:text-red-900">✕</button>
+          </div>
+        )}
+        {(search || statusFilter || monthFilter) && (
           <button
-            onClick={() => { setSearch(''); setStatusFilter(''); }}
+            onClick={() => { setSearch(''); setStatusFilter(''); setMonthFilter(''); }}
             className="text-xs text-gray-500 hover:text-gray-700 underline"
           >
-            Clear
+            Clear all
           </button>
         )}
         <span className="ml-auto text-xs text-gray-400">

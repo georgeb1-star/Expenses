@@ -8,7 +8,7 @@ import { StatusBadge } from '../components/StatusBadge';
 import { NewClaimModal } from '../components/NewClaimModal';
 import { formatCurrency, formatDate } from '../lib/utils';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
-import { FileText, Clock, CheckCircle, Send, ArrowRight, AlertCircle, Plus } from 'lucide-react';
+import { FileText, Clock, CheckCircle, Send, ArrowRight, AlertCircle, Plus, Package, Search, TrendingUp } from 'lucide-react';
 
 const CATEGORY_COLORS = ['#CC1719', '#16A34A', '#D97706', '#7C3AED', '#0891B2', '#D97706'];
 
@@ -46,6 +46,8 @@ export default function Dashboard() {
 
   const pendingApprovals = claims.filter((c) => c.status === 'manager_review');
   const readyForAudit = claims.filter((c) => c.status === 'audit');
+  const readyToBatch = claims.filter((c) => c.status === 'approved');
+  const processing = claims.filter((c) => c.status === 'processing');
 
   if (loading) {
     return (
@@ -92,7 +94,7 @@ export default function Dashboard() {
           icon={Clock}
           label="In Progress"
           value={inProgress.length}
-          href="/claims"
+          href={['processor', 'admin'].includes(user.role) ? '/finance' : '/claims'}
           iconColor="text-red-700"
           iconBg="bg-red-50"
         />
@@ -100,7 +102,7 @@ export default function Dashboard() {
           icon={CheckCircle}
           label="Approved"
           value={approved.length}
-          href="/claims"
+          href={['processor', 'admin'].includes(user.role) ? '/finance' : '/claims'}
           iconColor="text-green-600"
           iconBg="bg-green-50"
         />
@@ -108,11 +110,56 @@ export default function Dashboard() {
           icon={Send}
           label="Exported"
           value={exported.length}
-          href="/claims"
+          href={['processor', 'admin'].includes(user.role) ? '/batches' : '/claims'}
           iconColor="text-teal-600"
           iconBg="bg-teal-50"
         />
       </div>
+
+      {/* Processor finance queue */}
+      {['processor', 'admin'].includes(user.role) && (
+        <div>
+          <h2 className="text-sm font-semibold text-gray-700 mb-3">Finance Queue</h2>
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+            <Link to="/finance" className="block group">
+              <div className="flex items-center gap-4 px-5 py-4 bg-white border border-gray-200 rounded-lg hover:border-green-300 hover:shadow-sm transition-all">
+                <div className="p-2.5 rounded bg-green-50 flex-shrink-0">
+                  <CheckCircle className="w-4 h-4 text-green-600" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-2xl font-semibold text-gray-900 tabular-nums">{readyToBatch.length}</p>
+                  <p className="text-xs text-gray-500 font-medium mt-0.5">Ready to Batch</p>
+                </div>
+                <ArrowRight className="w-4 h-4 text-gray-400 opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0" />
+              </div>
+            </Link>
+            <Link to="/finance" className="block group">
+              <div className="flex items-center gap-4 px-5 py-4 bg-white border border-gray-200 rounded-lg hover:border-purple-300 hover:shadow-sm transition-all">
+                <div className="p-2.5 rounded bg-purple-50 flex-shrink-0">
+                  <Search className="w-4 h-4 text-purple-600" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-2xl font-semibold text-gray-900 tabular-nums">{readyForAudit.length}</p>
+                  <p className="text-xs text-gray-500 font-medium mt-0.5">In Audit</p>
+                </div>
+                <ArrowRight className="w-4 h-4 text-gray-400 opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0" />
+              </div>
+            </Link>
+            <Link to="/batches" className="block group">
+              <div className="flex items-center gap-4 px-5 py-4 bg-white border border-gray-200 rounded-lg hover:border-orange-300 hover:shadow-sm transition-all">
+                <div className="p-2.5 rounded bg-orange-50 flex-shrink-0">
+                  <Package className="w-4 h-4 text-orange-600" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-2xl font-semibold text-gray-900 tabular-nums">{processing.length}</p>
+                  <p className="text-xs text-gray-500 font-medium mt-0.5">Processing — Export Ready</p>
+                </div>
+                <ArrowRight className="w-4 h-4 text-gray-400 opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0" />
+              </div>
+            </Link>
+          </div>
+        </div>
+      )}
 
       {/* Action items for managers/processors */}
       {(user.role === 'manager' || user.role === 'processor' || user.role === 'admin') && (pendingApprovals.length > 0 || readyForAudit.length > 0) && (
@@ -283,7 +330,10 @@ export default function Dashboard() {
           {/* Monthly trend */}
           <Card>
             <CardHeader>
-              <CardTitle>Monthly Spend</CardTitle>
+              <div className="flex items-center justify-between">
+                <CardTitle>Monthly Spend</CardTitle>
+                <span className="text-xs text-gray-400">Click a bar to view claims</span>
+              </div>
             </CardHeader>
             <CardContent>
               {summary.monthly_trend?.length > 0 ? (
@@ -315,7 +365,14 @@ export default function Dashboard() {
                       }}
                       cursor={{ fill: '#F3F4F6' }}
                     />
-                    <Bar dataKey="amount" fill="#CC1719" radius={[2, 2, 0, 0]} maxBarSize={32} />
+                    <Bar
+                      dataKey="amount"
+                      fill="#CC1719"
+                      radius={[2, 2, 0, 0]}
+                      maxBarSize={32}
+                      cursor="pointer"
+                      onClick={(data) => navigate(`/claims?month=${data.month}`)}
+                    />
                   </BarChart>
                 </ResponsiveContainer>
               ) : (

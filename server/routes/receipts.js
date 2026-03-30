@@ -97,7 +97,7 @@ standalone.post('/analyze', upload.single('file'), async (req, res) => {
     res.json(extracted);
   } catch (err) {
     console.error('OCR error:', err.message);
-    res.status(500).json({ error: 'Receipt analysis failed — please fill in manually' });
+    res.status(500).json({ error: `Receipt analysis failed: ${err.message}` });
   }
 });
 

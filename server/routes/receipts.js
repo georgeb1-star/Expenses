@@ -22,8 +22,19 @@ function parseReceiptText(raw) {
   const text = raw;
   const upper = raw.toUpperCase();
 
-  // --- Supplier: first line containing at least two letters ---
-  const supplier = lines.find((l) => /[a-zA-Z]{2,}/.test(l) && l.length > 2) || null;
+  // --- Supplier: first "clean" line that looks like a business name ---
+  // Reject lines with too many noise chars (|, [, ], \, /, numbers dominating, etc.)
+  const supplier = lines.find((l) => {
+    if (l.length < 3) return false;
+    // Must have at least one word of 3+ consecutive letters
+    if (!/[a-zA-Z]{3,}/.test(l)) return false;
+    // Noise ratio: non-(letter/space/&/'-.) chars must be < 30% of line length
+    const noiseChars = (l.match(/[^a-zA-Z\s&'\-\.]/g) || []).length;
+    if (noiseChars / l.length > 0.3) return false;
+    // Skip lines that look like amounts or dates
+    if (/^\d[\d\s\/\-\.£$€:]+$/.test(l)) return false;
+    return true;
+  }) || null;
 
   // --- Amount: prefer TOTAL / AMOUNT DUE line, fall back to largest £ figure ---
   let amount = null;

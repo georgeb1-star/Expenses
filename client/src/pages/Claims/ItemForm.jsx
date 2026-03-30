@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { itemsApi, receiptsApi } from '../../api';
+import { useAuth } from '../../context/AuthContext';
 import { Button } from '../../components/ui/Button';
 import { Input } from '../../components/ui/Input';
 import { Select } from '../../components/ui/Select';
@@ -13,6 +14,7 @@ const VEHICLE_TYPES = ['Car', 'Motorcycle', 'Bicycle'];
 const PAYMENT_TYPES = ['Company Card', 'Personal Card', 'Cash', 'Bank Transfer'];
 
 export function ItemForm({ claimId, item, onSave, onCancel }) {
+  const { user } = useAuth();
   const editing = !!item;
   const [type, setType] = useState(item?.type || 'expense');
   const [form, setForm] = useState({
@@ -24,7 +26,7 @@ export function ItemForm({ claimId, item, onSave, onCancel }) {
     currency: item?.currency || 'GBP',
     payment_type: item?.payment_type || '',
     business_purpose: item?.business_purpose || '',
-    department: item?.department || '',
+    department: item?.department || user?.department || '',
     project: item?.project || '',
     billable: item?.billable || false,
     client_name: item?.client_name || '',

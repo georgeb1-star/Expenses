@@ -21,7 +21,7 @@ router.get('/summary', allow('processor', 'admin', 'manager'), async (req, res) 
   let q = db('claim_items')
     .join('claims', 'claim_items.claim_id', 'claims.id')
     .join('users', 'claims.user_id', 'users.id')
-    .whereNotIn('claims.status', ['draft']);
+    .where('claims.status', 'exported');
 
   if (dateFilter.start) {
     q = q.whereBetween('claim_items.transaction_date', [dateFilter.start, dateFilter.end]);
@@ -52,7 +52,7 @@ router.get('/summary', allow('processor', 'admin', 'manager'), async (req, res) 
 
   const monthly = await db('claim_items')
     .join('claims', 'claim_items.claim_id', 'claims.id')
-    .whereNotIn('claims.status', ['draft'])
+    .where('claims.status', 'exported')
     .groupBy(db.raw("TO_CHAR(claim_items.transaction_date, 'YYYY-MM')"))
     .select(
       db.raw("TO_CHAR(claim_items.transaction_date, 'YYYY-MM') as month"),

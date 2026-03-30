@@ -5,6 +5,7 @@ import { Input } from '../../components/ui/Input';
 import { Select } from '../../components/ui/Select';
 import { Textarea } from '../../components/ui/Textarea';
 import { formatCurrency } from '../../lib/utils';
+import { Sparkles, Loader2 } from 'lucide-react';
 
 const EXPENSE_TYPES = ['Travel', 'Subsistence', 'Entertainment', 'Accommodation', 'Equipment', 'Other'];
 const DEPARTMENTS = ['Sales', 'IT', 'Operations', 'Management', 'Finance', 'HR', 'Marketing', 'Logistics', 'Customer Service', 'Other'];
@@ -35,10 +36,36 @@ export function ItemForm({ claimId, item, onSave, onCancel }) {
     passengers: item?.passengers || '',
   });
   const [file, setFile] = useState(null);
+  const [scanning, setScanning] = useState(false);
+  const [scanned, setScanned] = useState(false);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
 
   const set = (field) => (e) => setForm({ ...form, [field]: e.target.value });
+
+  const handleFileChange = async (e) => {
+    const selected = e.target.files[0];
+    if (!selected) return;
+    setFile(selected);
+    setScanned(false);
+    setScanning(true);
+    try {
+      const { data } = await receiptsApi.analyze(selected);
+      setForm((prev) => ({
+        ...prev,
+        supplier:         data.supplier        || prev.supplier,
+        amount:           data.amount != null   ? String(data.amount)  : prev.amount,
+        vat:              data.vat != null       ? String(data.vat)     : prev.vat,
+        transaction_date: data.transaction_date || prev.transaction_date,
+        expense_type:     data.expense_type     || prev.expense_type,
+      }));
+      setScanned(true);
+    } catch {
+      // OCR failed silently — user fills in manually
+    } finally {
+      setScanning(false);
+    }
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -135,8 +162,20 @@ export function ItemForm({ claimId, item, onSave, onCancel }) {
           {!editing && (
             <div className="space-y-2">
               <label className="text-sm font-medium">Receipt</label>
-              <input type="file" accept="image/*,.pdf" onChange={(e) => setFile(e.target.files[0])}
+              <input type="file" accept="image/*,.pdf" onChange={handleFileChange}
                 className="block w-full text-sm text-muted-foreground file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-medium file:bg-primary file:text-white hover:file:bg-primary/90" />
+              {scanning && (
+                <div className="flex items-center gap-2 text-sm text-gray-500">
+                  <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                  Scanning receipt…
+                </div>
+              )}
+              {scanned && !scanning && (
+                <div className="flex items-center gap-2 text-sm text-green-700 bg-green-50 border border-green-200 px-3 py-2 rounded">
+                  <Sparkles className="w-3.5 h-3.5 flex-shrink-0" />
+                  Fields pre-filled from receipt — please review before saving
+                </div>
+              )}
             </div>
           )}
         </>

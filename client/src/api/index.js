@@ -38,6 +38,13 @@ export const receiptsApi = {
       headers: { 'Content-Type': 'multipart/form-data' },
     });
   },
+  analyze: (file) => {
+    const form = new FormData();
+    form.append('file', file);
+    return api.post('/receipts/analyze', form, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    });
+  },
   getUrl: (id) => `/api/receipts/${id}`,
   delete: (id) => api.delete(`/receipts/${id}`),
 };

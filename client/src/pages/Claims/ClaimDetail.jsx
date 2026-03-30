@@ -72,10 +72,10 @@ export default function ClaimDetail() {
     try {
       await action({ comment: actionComment });
       setActionComment('');
-      await load();
     } catch (err) {
       setError(err.response?.data?.error || 'Action failed');
     } finally {
+      await load();
       setActionLoading(false);
     }
   };

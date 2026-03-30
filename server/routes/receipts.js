@@ -2,6 +2,7 @@ const router = require('express').Router({ mergeParams: true });
 const express = require('express');
 const multer = require('multer');
 const { createWorker } = require('tesseract.js');
+const sharp = require('sharp');
 const db = require('../db/connection');
 const authenticate = require('../middleware/auth');
 
@@ -143,8 +144,18 @@ standalone.post('/analyze', upload.single('file'), async (req, res) => {
   }
 
   try {
+    // Pre-process: auto-rotate via EXIF, convert to greyscale, boost contrast
+    // withMetadata().rotate() corrects phone camera orientation (sideways shots)
+    const processed = await sharp(req.file.buffer)
+      .rotate()           // auto-rotate using EXIF orientation tag
+      .grayscale()        // greyscale improves Tesseract accuracy
+      .normalise()        // stretch contrast so text is darker against background
+      .toFormat('png')
+      .toBuffer();
+
     const worker = await getOcrWorker();
-    const { data: { text } } = await worker.recognize(req.file.buffer);
+    const { data: { text } } = await worker.recognize(processed);
+    console.log('OCR raw text:', text.slice(0, 300));
     const extracted = parseReceiptText(text);
     res.json(extracted);
   } catch (err) {

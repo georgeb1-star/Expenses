@@ -7,6 +7,7 @@ import { Textarea } from '../../components/ui/Textarea';
 import { formatCurrency } from '../../lib/utils';
 
 const EXPENSE_TYPES = ['Travel', 'Subsistence', 'Entertainment', 'Accommodation', 'Equipment', 'Other'];
+const DEPARTMENTS = ['Sales', 'IT', 'Operations', 'Management', 'Finance', 'HR', 'Marketing', 'Logistics', 'Customer Service', 'Other'];
 const VEHICLE_TYPES = ['Car', 'Motorcycle', 'Bicycle'];
 const PAYMENT_TYPES = ['Company Card', 'Personal Card', 'Cash', 'Bank Transfer'];
 
@@ -181,7 +182,10 @@ export function ItemForm({ claimId, item, onSave, onCancel }) {
       <div className="grid grid-cols-2 gap-4">
         <div className="space-y-2">
           <label className="text-sm font-medium">Department *</label>
-          <Input value={form.department} onChange={set('department')} required placeholder="e.g. Sales" />
+          <Select value={form.department} onChange={set('department')} required>
+            <option value="">Select department…</option>
+            {DEPARTMENTS.map((d) => <option key={d} value={d}>{d}</option>)}
+          </Select>
         </div>
         <div className="space-y-2">
           <label className="text-sm font-medium">Project</label>

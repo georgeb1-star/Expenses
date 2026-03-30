@@ -5,13 +5,22 @@ const authenticate = require('../middleware/auth');
 router.use(authenticate);
 
 async function geocode(place) {
+  if (place.trim().length < 3) throw new Error(`Location "${place}" is too short to be a valid place name`);
+
   const { data } = await axios.get('https://nominatim.openstreetmap.org/search', {
     params: { q: place, format: 'json', limit: 1, countrycodes: 'gb' },
     headers: { 'User-Agent': 'ExpenseFlow/1.0 (internal expense management)' },
     timeout: 10000,
   });
+
   if (!data.length) throw new Error(`Could not find location: "${place}"`);
-  return { lat: parseFloat(data[0].lat), lon: parseFloat(data[0].lon) };
+
+  const result = data[0];
+  if (parseFloat(result.importance) < 0.3) {
+    throw new Error(`"${place}" doesn't appear to be a recognised UK town or city`);
+  }
+
+  return { lat: parseFloat(result.lat), lon: parseFloat(result.lon) };
 }
 
 // POST /api/mileage/calculate

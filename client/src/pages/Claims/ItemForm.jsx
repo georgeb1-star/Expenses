@@ -222,7 +222,7 @@ export function ItemForm({ claimId, item, onSave, onCancel }) {
               <label className="text-sm font-medium">Distance (miles) *</label>
               <div className="flex gap-2">
                 <Input type="number" step="0.1" min="0" value={form.distance} onChange={set('distance')} required />
-                {form.from_location && form.to_location && (
+                {form.from_location?.trim().length >= 3 && form.to_location?.trim().length >= 3 && (
                   <button
                     type="button"
                     onClick={handleCalculateDistance}

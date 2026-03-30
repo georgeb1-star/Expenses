@@ -26,6 +26,8 @@ export function ItemForm({ claimId, item, onSave, onCancel }) {
     department: item?.department || '',
     project: item?.project || '',
     billable: item?.billable || false,
+    client_name: item?.client_name || '',
+    client_reference: item?.client_reference || '',
     from_location: item?.from_location || '',
     to_location: item?.to_location || '',
     vehicle_type: item?.vehicle_type || 'Car',
@@ -188,15 +190,58 @@ export function ItemForm({ claimId, item, onSave, onCancel }) {
           </Select>
         </div>
         <div className="space-y-2">
-          <label className="text-sm font-medium">Project</label>
-          <Input value={form.project} onChange={set('project')} placeholder="e.g. Q1 Campaign" />
+          <label className="text-sm font-medium">
+            Project{form.billable ? ' *' : ''}
+          </label>
+          <Input
+            value={form.project}
+            onChange={set('project')}
+            placeholder="e.g. Q1 Campaign"
+            required={form.billable}
+          />
         </div>
       </div>
 
+      {/* Billable toggle */}
       <div className="flex items-center gap-2">
-        <input type="checkbox" id="billable" checked={form.billable} onChange={(e) => setForm({ ...form, billable: e.target.checked })} className="rounded" />
+        <input
+          type="checkbox"
+          id="billable"
+          checked={form.billable}
+          onChange={(e) => setForm({ ...form, billable: e.target.checked })}
+          className="rounded"
+        />
         <label htmlFor="billable" className="text-sm">Billable to client</label>
       </div>
+
+      {/* Billing details — only shown when billable is checked */}
+      {form.billable && (
+        <div className="rounded-md border border-red-200 bg-red-50 p-4 space-y-3">
+          <p className="text-xs font-semibold text-red-700 uppercase tracking-wide">Billing details</p>
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Client name *</label>
+              <Input
+                value={form.client_name}
+                onChange={set('client_name')}
+                placeholder="e.g. Acme Ltd"
+                required={form.billable}
+              />
+            </div>
+            <div className="space-y-2">
+              <label className="text-sm font-medium">
+                Client PO / Reference
+                <span className="ml-1 text-xs font-normal text-gray-400">(optional)</span>
+              </label>
+              <Input
+                value={form.client_reference}
+                onChange={set('client_reference')}
+                placeholder="e.g. PO-2026-0042"
+              />
+            </div>
+          </div>
+        </div>
+      )}
 
       <div className="flex gap-3 pt-2">
         <Button type="submit" disabled={saving}>{saving ? 'Saving…' : editing ? 'Update Item' : 'Add Item'}</Button>

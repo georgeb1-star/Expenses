@@ -80,3 +80,8 @@ export const batchesApi = {
 export const reportsApi = {
   summary: (month) => api.get('/reports/summary', { params: month ? { month } : {} }),
 };
+
+// Mileage
+export const mileageApi = {
+  calculate: (from, to) => api.post('/mileage/calculate', { from, to }),
+};

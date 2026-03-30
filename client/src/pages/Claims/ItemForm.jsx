@@ -1,12 +1,12 @@
 import React, { useState } from 'react';
-import { itemsApi, receiptsApi } from '../../api';
+import { itemsApi, receiptsApi, mileageApi } from '../../api';
 import { useAuth } from '../../context/AuthContext';
 import { Button } from '../../components/ui/Button';
 import { Input } from '../../components/ui/Input';
 import { Select } from '../../components/ui/Select';
 import { Textarea } from '../../components/ui/Textarea';
 import { formatCurrency } from '../../lib/utils';
-import { Sparkles, Loader2 } from 'lucide-react';
+import { Sparkles, Loader2, MapPin } from 'lucide-react';
 
 const EXPENSE_TYPES = ['Travel', 'Subsistence', 'Entertainment', 'Accommodation', 'Equipment', 'Other'];
 const DEPARTMENTS = ['Sales', 'IT', 'Operations', 'Management', 'Finance', 'HR', 'Marketing', 'Logistics', 'Customer Service', 'Other'];
@@ -42,8 +42,23 @@ export function ItemForm({ claimId, item, onSave, onCancel }) {
   const [scanned, setScanned] = useState(false);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
+  const [calculating, setCalculating] = useState(false);
 
   const set = (field) => (e) => setForm({ ...form, [field]: e.target.value });
+
+  const handleCalculateDistance = async () => {
+    if (!form.from_location || !form.to_location) return;
+    setCalculating(true);
+    setError('');
+    try {
+      const { data } = await mileageApi.calculate(form.from_location, form.to_location);
+      setForm((prev) => ({ ...prev, distance: String(data.miles) }));
+    } catch (err) {
+      setError(err.response?.data?.error || 'Distance calculation failed. Please enter manually.');
+    } finally {
+      setCalculating(false);
+    }
+  };
 
   const handleFileChange = async (e) => {
     const selected = e.target.files[0];
@@ -205,7 +220,21 @@ export function ItemForm({ claimId, item, onSave, onCancel }) {
             </div>
             <div className="space-y-2">
               <label className="text-sm font-medium">Distance (miles) *</label>
-              <Input type="number" step="0.1" min="0" value={form.distance} onChange={set('distance')} required />
+              <div className="flex gap-2">
+                <Input type="number" step="0.1" min="0" value={form.distance} onChange={set('distance')} required />
+                {form.from_location && form.to_location && (
+                  <button
+                    type="button"
+                    onClick={handleCalculateDistance}
+                    disabled={calculating}
+                    title="Calculate distance from route"
+                    className="flex-shrink-0 flex items-center gap-1.5 px-3 py-2 text-sm font-medium rounded-md border border-input bg-white hover:bg-muted transition-colors disabled:opacity-50"
+                  >
+                    {calculating ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <MapPin className="w-3.5 h-3.5" />}
+                    {calculating ? 'Calculating…' : 'Calculate'}
+                  </button>
+                )}
+              </div>
             </div>
             <div className="space-y-2">
               <label className="text-sm font-medium">Passengers</label>

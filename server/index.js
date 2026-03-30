@@ -11,6 +11,7 @@ const { nested: alertsNested, standalone: alertsStandalone } = require('./routes
 const notificationsRoutes = require('./routes/notifications');
 const batchesRoutes = require('./routes/batches');
 const reportsRoutes = require('./routes/reports');
+const mileageRoutes = require('./routes/mileage');
 
 const app = express();
 
@@ -35,6 +36,7 @@ app.use('/api/alerts', alertsStandalone);
 app.use('/api/notifications', notificationsRoutes);
 app.use('/api/batches', batchesRoutes);
 app.use('/api/reports', reportsRoutes);
+app.use('/api/mileage', mileageRoutes);
 
 // Global error handler
 app.use((err, req, res, next) => {

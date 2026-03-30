@@ -57,7 +57,12 @@ export default function Profile() {
 
           <div className="space-y-2">
             <label className="text-sm font-medium text-gray-700">Department</label>
-            <Input value={form.department} onChange={set('department')} placeholder="e.g. Sales" />
+            <Select value={form.department} onChange={set('department')}>
+              <option value="">Select department…</option>
+              {['Sales', 'IT', 'Operations', 'Management', 'Finance', 'HR', 'Marketing', 'Logistics', 'Customer Service', 'Other'].map((d) => (
+                <option key={d} value={d}>{d}</option>
+              ))}
+            </Select>
           </div>
 
           {user?.role === 'employee' && (

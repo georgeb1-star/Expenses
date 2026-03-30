@@ -40,12 +40,17 @@ async function transition(claimId, action, userId, details = {}) {
 }
 
 async function notify(userIds, claimId, message) {
-  const rows = userIds.filter(Boolean).map((user_id) => ({
-    user_id,
-    claim_id: claimId,
-    message,
-  }));
-  if (rows.length) await db('notifications').insert(rows);
+  try {
+    const rows = userIds.filter(Boolean).map((user_id) => ({
+      user_id,
+      claim_id: claimId,
+      message,
+    }));
+    if (rows.length) await db('notifications').insert(rows);
+  } catch (err) {
+    // Notification failures must never break the calling action
+    console.error('Notification insert failed:', err.message);
+  }
 }
 
 module.exports = { transition, notify };

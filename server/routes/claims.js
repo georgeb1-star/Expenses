@@ -26,7 +26,7 @@ router.get('/', async (req, res) => {
       q.where('claims.manager_id', userId)
         .orWhereIn('claims.user_id', [...team, userId])
         // Unassigned submitted claims are visible to all managers so nothing gets stuck
-        .orWhere((q2) => q2.whereNull('claims.manager_id').whereIn('claims.status', ['submitted', 'manager_review']));
+        .orWhereIn('claims.status', ['submitted', 'manager_review']);
     });
   }
   // processor / admin see all
@@ -146,12 +146,22 @@ router.post('/:id/submit', async (req, res) => {
 
   await db('claims').where({ id: claim.id }).update({ manager_id: managerId, updated_at: db.fn.now() });
 
-  const updated = await transition(claim.id, 'submit', req.user.id);
-  await transition(claim.id, 'manager_review', req.user.id);
+  // Transition directly to manager_review, recording the submission in the audit log
+  await db('claims').where({ id: claim.id }).update({
+    status: 'manager_review',
+    submitted_at: db.fn.now(),
+    updated_at: db.fn.now(),
+  });
+  await db('audit_logs').insert({
+    claim_id: claim.id,
+    user_id: req.user.id,
+    action: 'submit',
+    details: JSON.stringify({ from: 'draft', to: 'manager_review' }),
+  });
 
-  if (managerId) {
-    await notify([managerId], claim.id, `New claim submitted by ${req.user.name}: "${claim.title}"`);
-  }
+  const updated = await db('claims').where({ id: claim.id }).first();
+
+  await notify([managerId], claim.id, `New claim submitted by ${req.user.name}: "${claim.title}"`);
 
   res.json(updated);
 });

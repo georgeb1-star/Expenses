@@ -5,7 +5,7 @@ const TRANSITIONS = {
   submitted: { manager_review: 'manager_review' },
   manager_review: { approve: 'approved', reject: 'draft' },
   approved: { audit: 'audit' },
-  audit: { audit_approve: 'processing', audit_reject: 'approved' },
+  audit: { audit_approve: 'processing', audit_reject: 'manager_review' },
   processing: { export: 'exported' },
 };
 

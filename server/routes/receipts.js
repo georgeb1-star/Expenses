@@ -134,6 +134,12 @@ itemRouter.post('/', upload.single('file'), async (req, res) => {
 const standalone = express.Router();
 standalone.use(authenticate);
 
+// Score OCR text by counting clean alphabetic words (3+ letters).
+// Higher score = more readable = better rotation.
+function scoreOcrText(text) {
+  return (text.match(/\b[a-zA-Z]{3,}\b/g) || []).length;
+}
+
 // POST /api/receipts/analyze — OCR a receipt using Tesseract
 standalone.post('/analyze', upload.single('file'), async (req, res) => {
   if (!req.file) return res.status(400).json({ error: 'No file provided' });
@@ -144,19 +150,35 @@ standalone.post('/analyze', upload.single('file'), async (req, res) => {
   }
 
   try {
-    // Pre-process: auto-rotate via EXIF, convert to greyscale, boost contrast
-    // withMetadata().rotate() corrects phone camera orientation (sideways shots)
-    const processed = await sharp(req.file.buffer)
-      .rotate()           // auto-rotate using EXIF orientation tag
-      .grayscale()        // greyscale improves Tesseract accuracy
-      .normalise()        // stretch contrast so text is darker against background
+    // Base pre-processing: EXIF auto-rotate, greyscale, boost contrast
+    const base = await sharp(req.file.buffer)
+      .rotate()
+      .grayscale()
+      .normalise()
       .toFormat('png')
       .toBuffer();
 
+    const { width, height } = await sharp(base).metadata();
     const worker = await getOcrWorker();
-    const { data: { text } } = await worker.recognize(processed);
-    console.log('OCR raw text:', text.slice(0, 300));
-    const extracted = parseReceiptText(text);
+
+    let bestText = '';
+    let bestScore = -1;
+
+    // If the image is landscape (wider than tall), the receipt was likely
+    // photographed sideways. Try 0° and 90° and pick whichever scores better.
+    const rotations = width > height ? [0, 90] : [0];
+
+    for (const angle of rotations) {
+      const buf = angle === 0
+        ? base
+        : await sharp(base).rotate(angle).toBuffer();
+      const { data: { text } } = await worker.recognize(buf);
+      const score = scoreOcrText(text);
+      if (score > bestScore) { bestScore = score; bestText = text; }
+    }
+
+    console.log('OCR best text:', bestText.slice(0, 300));
+    const extracted = parseReceiptText(bestText);
     res.json(extracted);
   } catch (err) {
     console.error('OCR error:', err.message);

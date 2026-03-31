@@ -31,23 +31,22 @@ router.post('/', allow('processor', 'admin'), async (req, res) => {
     return res.status(400).json({ error: 'name and claim_ids are required' });
   }
 
-  // Verify all claims are in 'approved' status
+  // Verify all claims have passed audit (processing status)
   const claims = await db('claims').whereIn('id', claim_ids);
-  const invalid = claims.filter((c) => c.status !== 'approved');
+  const invalid = claims.filter((c) => c.status !== 'processing');
   if (invalid.length) {
-    return res.status(422).json({ error: 'All claims must be in approved status', invalid: invalid.map((c) => c.id) });
+    return res.status(422).json({ error: 'All claims must have passed audit before batching', invalid: invalid.map((c) => c.id) });
   }
 
   const [batch] = await db('batches')
     .insert({ name, processor_id: req.user.id })
     .returning('*');
 
-  // Assign batch and move to audit
+  // Assign batch — claims stay in processing until exported
   await db('claims').whereIn('id', claim_ids).update({ batch_id: batch.id, updated_at: db.fn.now() });
 
   for (const claim of claims) {
-    await transition(claim.id, 'audit', req.user.id, { batch_id: batch.id });
-    await notify([claim.user_id], claim.id, `Your claim "${claim.title}" has been added to batch "${name}" for audit`);
+    await notify([claim.user_id], claim.id, `Your claim "${claim.title}" has been added to batch "${name}" and is being processed for payment`);
   }
 
   res.status(201).json(batch);

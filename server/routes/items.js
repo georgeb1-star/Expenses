@@ -19,7 +19,7 @@ router.post('/', async (req, res, next) => {
 
     const {
       type, expense_type, supplier, transaction_date, amount, vat, currency = 'GBP',
-      payment_type, business_purpose, department, project, billable = false,
+      payment_type, business_purpose, department, billable = false, client_name,
       from_location, to_location, vehicle_type, distance, passengers,
     } = req.body;
 
@@ -37,7 +37,7 @@ router.post('/', async (req, res, next) => {
     const [item] = await db('claim_items').insert({
       claim_id: claim.id, type, expense_type, supplier, transaction_date,
       amount: amount || 0, vat: vat || 0, currency, payment_type, business_purpose,
-      department, project, billable,
+      department, billable, client_name: billable ? client_name : null,
       from_location, to_location, vehicle_type,
       distance: distance || null,
       passengers: passengers || null,

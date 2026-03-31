@@ -280,14 +280,27 @@ export default function ClaimDetail() {
         </Card>
       )}
 
-      {/* Approved — awaiting batch assignment */}
+      {/* Approved — processor starts audit */}
       {claim.status === 'approved' && ['processor', 'admin'].includes(user.role) && (
         <Card>
-          <CardHeader><CardTitle>Ready for Audit</CardTitle></CardHeader>
+          <CardHeader><CardTitle>Finance Audit</CardTitle></CardHeader>
           <CardContent>
-            <p className="text-sm text-gray-600">
-              This claim is approved and waiting to be batched. Go to <strong>Batches</strong> to create or add to a batch — this will move it into the audit queue.
+            <p className="text-sm text-gray-600 mb-3">
+              This claim has been approved by the manager. Start the audit to review receipts and compliance, then pass or fail it.
             </p>
+            <Button
+              size="sm"
+              disabled={actionLoading}
+              onClick={async () => {
+                setActionLoading(true);
+                setError('');
+                try { await claimsApi.startAudit(id); await load(); }
+                catch (err) { setError(err.response?.data?.error || 'Failed to start audit'); }
+                finally { setActionLoading(false); }
+              }}
+            >
+              {actionLoading ? 'Starting…' : 'Start Audit'}
+            </Button>
           </CardContent>
         </Card>
       )}

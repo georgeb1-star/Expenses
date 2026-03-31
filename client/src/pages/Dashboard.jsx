@@ -46,7 +46,7 @@ export default function Dashboard() {
 
   const pendingApprovals = claims.filter((c) => c.status === 'manager_review');
   const readyForAudit = claims.filter((c) => c.status === 'audit');
-  const readyToBatch = claims.filter((c) => c.status === 'approved');
+  const readyToBatch = claims.filter((c) => c.status === 'processing');
   const processing = claims.filter((c) => c.status === 'processing');
 
   if (loading) {
@@ -182,9 +182,9 @@ export default function Dashboard() {
               <div className="flex items-center justify-between px-5 py-4 bg-purple-50 border border-purple-200 rounded hover:bg-purple-100 transition-colors">
                 <div>
                   <p className="text-sm font-medium text-purple-900">
-                    {readyToBatch.length} claim{readyToBatch.length !== 1 ? 's' : ''} approved and ready to batch
+                    {readyToBatch.length} claim{readyToBatch.length !== 1 ? 's' : ''} passed audit — ready to batch
                   </p>
-                  <p className="text-xs text-purple-700 mt-0.5">Go to Finance to create a batch for audit</p>
+                  <p className="text-xs text-purple-700 mt-0.5">Go to Finance to create a payment batch</p>
                 </div>
                 <ArrowRight className="w-4 h-4 text-purple-600 flex-shrink-0" />
               </div>
@@ -273,7 +273,7 @@ export default function Dashboard() {
               )}
               {(user.role === 'processor' || user.role === 'admin') && readyToBatch.length > 0 && (
                 <ActionItem
-                  label="Approved, ready to batch"
+                  label="Passed audit, ready to batch"
                   count={readyToBatch.length}
                   href="/finance"
                   color="text-purple-700"

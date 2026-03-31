@@ -162,7 +162,7 @@ export default function Dashboard() {
       )}
 
       {/* Action items for managers/processors */}
-      {(user.role === 'manager' || user.role === 'processor' || user.role === 'admin') && (pendingApprovals.length > 0 || readyForAudit.length > 0) && (
+      {(user.role === 'manager' || user.role === 'processor' || user.role === 'admin') && (pendingApprovals.length > 0 || readyToBatch.length > 0) && (
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
           {user.role !== 'processor' && pendingApprovals.length > 0 && (
             <Link to="/approvals" className="block">
@@ -177,14 +177,14 @@ export default function Dashboard() {
               </div>
             </Link>
           )}
-          {user.role !== 'manager' && readyForAudit.length > 0 && (
+          {user.role !== 'manager' && readyToBatch.length > 0 && (
             <Link to="/finance" className="block">
               <div className="flex items-center justify-between px-5 py-4 bg-purple-50 border border-purple-200 rounded hover:bg-purple-100 transition-colors">
                 <div>
                   <p className="text-sm font-medium text-purple-900">
-                    {readyForAudit.length} claim{readyForAudit.length !== 1 ? 's' : ''} ready for audit
+                    {readyToBatch.length} claim{readyToBatch.length !== 1 ? 's' : ''} approved and ready to batch
                   </p>
-                  <p className="text-xs text-purple-700 mt-0.5">Process approved claims through Finance</p>
+                  <p className="text-xs text-purple-700 mt-0.5">Go to Finance to create a batch for audit</p>
                 </div>
                 <ArrowRight className="w-4 h-4 text-purple-600 flex-shrink-0" />
               </div>
@@ -271,16 +271,16 @@ export default function Dashboard() {
                   dotColor="bg-amber-500"
                 />
               )}
-              {(user.role === 'processor' || user.role === 'admin') && readyForAudit.length > 0 && (
+              {(user.role === 'processor' || user.role === 'admin') && readyToBatch.length > 0 && (
                 <ActionItem
-                  label="Ready for audit"
-                  count={readyForAudit.length}
+                  label="Approved, ready to batch"
+                  count={readyToBatch.length}
                   href="/finance"
                   color="text-purple-700"
                   dotColor="bg-purple-500"
                 />
               )}
-              {draft.length === 0 && inProgress.length === 0 && pendingApprovals.length === 0 && readyForAudit.length === 0 && (
+              {draft.length === 0 && inProgress.length === 0 && pendingApprovals.length === 0 && readyToBatch.length === 0 && (
                 <p className="text-sm text-gray-500 py-2">No items require your attention.</p>
               )}
             </div>

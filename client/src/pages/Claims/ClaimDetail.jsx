@@ -396,92 +396,139 @@ export default function ClaimDetail() {
               )}
 
               {allItems.length === 0 ? (
-                <p className="text-sm text-gray-500 py-4">
-                  No items added yet. Use "Add Expense Item" to get started.
-                </p>
+                <div className="py-12 text-center">
+                  <p className="text-sm font-medium text-gray-600">No expense items added yet.</p>
+                  <p className="text-xs text-gray-400 mt-1">Use "Add Expense Item" to get started.</p>
+                </div>
               ) : (
-                <div>
-                  {/* Items table header */}
-                  <div className="grid grid-cols-[1fr_auto_auto] gap-4 items-center py-2 border-b border-gray-100 mb-1">
-                    <span className="text-[11px] font-semibold text-gray-500 uppercase tracking-wide">Item</span>
-                    <span className="text-[11px] font-semibold text-gray-500 uppercase tracking-wide w-20 text-right">Amount</span>
-                    {canEdit && <span className="w-20" />}
-                  </div>
+                <div className="overflow-x-auto -mx-5">
+                  <table className="w-full min-w-[640px] border-collapse">
+                    <thead>
+                      <tr className="bg-gray-50 border-y border-gray-100">
+                        <th className="w-1 p-0" aria-hidden="true" />
+                        <th className="text-left text-[11px] font-semibold text-gray-500 uppercase tracking-wide px-3 py-2.5 w-[120px]">Category</th>
+                        <th className="text-left text-[11px] font-semibold text-gray-500 uppercase tracking-wide px-3 py-2.5">Description</th>
+                        <th className="text-left text-[11px] font-semibold text-gray-500 uppercase tracking-wide px-3 py-2.5 w-[96px]">Date</th>
+                        <th className="text-left text-[11px] font-semibold text-gray-500 uppercase tracking-wide px-3 py-2.5 w-[88px]">Payment</th>
+                        <th className="text-center text-[11px] font-semibold text-gray-500 uppercase tracking-wide px-3 py-2.5 w-[60px]">Receipt</th>
+                        <th className="text-right text-[11px] font-semibold text-gray-500 uppercase tracking-wide px-3 py-2.5 pr-5 w-[96px]">Amount</th>
+                        {canEdit && <th className="w-[80px] px-3 py-2.5" aria-label="Actions" />}
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-gray-100">
+                      {allItems.map((item, index) => {
+                        const categoryKey = (() => {
+                          const t = (item.expense_type || item.type || '').toLowerCase();
+                          if (item.type === 'mileage') return 'mileage';
+                          if (t.includes('travel') || t.includes('transport') || t.includes('rail') || t.includes('flight') || t.includes('taxi')) return 'travel';
+                          if (t.includes('hotel') || t.includes('accommodat')) return 'accommodation';
+                          if (t.includes('meal') || t.includes('subsist') || t.includes('food') || t.includes('lunch') || t.includes('dinner') || t.includes('breakfast')) return 'subsistence';
+                          if (t.includes('entertain') || t.includes('client')) return 'entertainment';
+                          if (t.includes('equip') || t.includes('hardware') || t.includes('software')) return 'equipment';
+                          return 'other';
+                        })();
+                        const categoryStyles = {
+                          travel:        { bar: 'bg-blue-500',    badge: 'bg-blue-50 text-blue-700',      label: item.expense_type || 'Travel' },
+                          accommodation: { bar: 'bg-violet-500',  badge: 'bg-violet-50 text-violet-700',  label: item.expense_type || 'Accommodation' },
+                          subsistence:   { bar: 'bg-emerald-500', badge: 'bg-emerald-50 text-emerald-700',label: item.expense_type || 'Subsistence' },
+                          entertainment: { bar: 'bg-pink-500',    badge: 'bg-pink-50 text-pink-700',      label: item.expense_type || 'Entertainment' },
+                          equipment:     { bar: 'bg-orange-500',  badge: 'bg-orange-50 text-orange-700',  label: item.expense_type || 'Equipment' },
+                          mileage:       { bar: 'bg-indigo-500',  badge: 'bg-indigo-50 text-indigo-700',  label: 'Mileage' },
+                          other:         { bar: 'bg-gray-400',    badge: 'bg-gray-100 text-gray-600',     label: item.expense_type || 'Other' },
+                        };
+                        const style = categoryStyles[categoryKey];
+                        const isEven = index % 2 === 0;
+                        const amount = item.type === 'mileage' ? item.reimbursement_amount : item.amount;
+                        const hasReceipt = item.receipts && item.receipts.length > 0;
 
-                  <div className="space-y-0 divide-y divide-gray-100">
-                    {allItems.map((item) => (
-                      <div key={item.id} className="grid grid-cols-[1fr_auto_auto] gap-4 items-center py-3.5">
-                        {/* Item description */}
-                        <div>
-                          <div className="flex items-center gap-2">
-                            <span className="text-[11px] px-1.5 py-0.5 rounded bg-gray-100 text-gray-600 font-medium uppercase tracking-wide">
-                              {item.type}
-                            </span>
-                            <span className="text-sm font-medium text-gray-900">
-                              {item.expense_type || item.type}
-                            </span>
-                            {item.supplier && (
-                              <span className="text-sm text-gray-500">— {item.supplier}</span>
+                        return (
+                          <tr key={item.id} className={`group align-top${isEven ? '' : ' bg-gray-50/60'}`}>
+                            {/* Colour bar */}
+                            <td className="p-0 w-1" aria-hidden="true">
+                              <div className={`h-full w-1 min-h-[48px] ${style.bar}`} />
+                            </td>
+                            {/* Category badge */}
+                            <td className="px-3 py-3 align-middle">
+                              <span className={`inline-block text-[11px] font-medium px-2 py-0.5 rounded whitespace-nowrap ${style.badge}`}>
+                                {style.label}
+                              </span>
+                            </td>
+                            {/* Description */}
+                            <td className="px-3 py-3 align-middle">
+                              {item.supplier && <p className="text-sm font-medium text-gray-900 leading-snug">{item.supplier}</p>}
+                              {item.business_purpose && <p className="text-xs text-gray-500 mt-0.5 leading-snug">{item.business_purpose}</p>}
+                              {item.type === 'mileage' && item.from_location && item.to_location && (
+                                <p className="text-xs text-gray-500 mt-0.5">
+                                  {item.from_location} &rarr; {item.to_location}
+                                  {item.distance ? ` · ${item.distance} mi` : ''}
+                                  {item.vehicle_type ? ` · ${item.vehicle_type}` : ''}
+                                </p>
+                              )}
+                              {item.billable && item.client_name && (
+                                <p className="text-[11px] text-gray-400 mt-0.5">Billable: {item.client_name}</p>
+                              )}
+                            </td>
+                            {/* Date */}
+                            <td className="px-3 py-3 align-middle">
+                              <span className="text-sm text-gray-600 tabular-nums whitespace-nowrap">{formatDate(item.transaction_date)}</span>
+                            </td>
+                            {/* Payment */}
+                            <td className="px-3 py-3 align-middle">
+                              {item.payment_type
+                                ? <span className="text-xs text-gray-500 whitespace-nowrap">{item.payment_type}</span>
+                                : <span className="text-xs text-gray-300">&mdash;</span>}
+                            </td>
+                            {/* Receipt */}
+                            <td className="px-3 py-3 align-middle text-center">
+                              {item.type === 'mileage' ? (
+                                <span className="text-xs text-gray-300 select-none">&mdash;</span>
+                              ) : hasReceipt ? (
+                                <button
+                                  onClick={() => viewReceipt(item.receipts[0].id, item.receipts[0].filename)}
+                                  title={item.receipts[0].filename}
+                                  className="inline-flex items-center justify-center text-red-700 hover:text-red-800 transition-colors"
+                                >
+                                  <FileText size={15} strokeWidth={2} />
+                                </button>
+                              ) : (
+                                <span className="inline-flex items-center justify-center text-gray-300" title="No receipt attached">
+                                  <FileText size={15} strokeWidth={1.5} />
+                                </span>
+                              )}
+                            </td>
+                            {/* Amount */}
+                            <td className="px-3 py-3 pr-5 align-middle text-right">
+                              <p className="text-sm font-semibold text-gray-900 tabular-nums">{formatCurrency(amount)}</p>
+                              {item.vat > 0 && (
+                                <p className="text-[11px] text-gray-400 tabular-nums mt-0.5">VAT {formatCurrency(item.vat)}</p>
+                              )}
+                            </td>
+                            {/* Actions — visible on row hover only */}
+                            {canEdit && (
+                              <td className="px-3 py-3 align-middle text-right">
+                                <div className="flex items-center justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity duration-150">
+                                  <button onClick={() => setEditingItem(item)} className="text-[11px] font-medium text-red-700 hover:text-red-800 whitespace-nowrap">Edit</button>
+                                  <span className="text-gray-200 select-none">|</span>
+                                  <button onClick={() => setConfirmDeleteItemId(item.id)} className="text-[11px] font-medium text-gray-400 hover:text-red-600 whitespace-nowrap transition-colors">Remove</button>
+                                </div>
+                              </td>
                             )}
-                          </div>
-                          <div className="text-xs text-gray-500 mt-1 flex items-center gap-2">
-                            <span>{formatDate(item.transaction_date)}</span>
-                            {item.business_purpose && (
-                              <>
-                                <span className="text-gray-300">·</span>
-                                <span>{item.business_purpose}</span>
-                              </>
-                            )}
-                          </div>
-                          {item.type === 'mileage' && (
-                            <p className="text-xs text-gray-500 mt-0.5">
-                              {item.from_location} → {item.to_location} · {item.distance} miles
-                            </p>
-                          )}
-                        </div>
-
-                        {/* Amount */}
-                        <div className="text-right w-20">
-                          <p className="text-sm font-semibold text-gray-900 tabular-nums">
-                            {item.type === 'mileage'
-                              ? formatCurrency(item.reimbursement_amount)
-                              : formatCurrency(item.amount)}
-                          </p>
-                          {item.vat > 0 && (
-                            <p className="text-[11px] text-gray-400 tabular-nums">
-                              VAT {formatCurrency(item.vat)}
-                            </p>
-                          )}
-                        </div>
-
-                        {/* Actions */}
-                        {canEdit && (
-                          <div className="flex items-center gap-2 w-20 justify-end">
-                            <button
-                              onClick={() => setEditingItem(item)}
-                              className="text-xs text-red-700 hover:text-red-800 font-medium"
-                            >
-                              Edit
-                            </button>
-                            <button
-                              onClick={() => setConfirmDeleteItemId(item.id)}
-                              className="text-xs text-red-500 hover:text-red-700 font-medium"
-                            >
-                              Remove
-                            </button>
-                          </div>
-                        )}
-                      </div>
-                    ))}
-                  </div>
-
-                  {/* Total row */}
-                  <div className="flex items-center justify-between pt-3 mt-2 border-t border-gray-200">
-                    <span className="text-sm font-medium text-gray-700">Total claim amount</span>
-                    <span className="text-lg font-semibold text-gray-900 tabular-nums">
-                      {formatCurrency(totalAmount)}
-                    </span>
-                  </div>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                    <tfoot>
+                      <tr className="border-t-2 border-t-gray-300 border-b border-b-gray-100">
+                        <td colSpan={canEdit ? 6 : 5} className="px-3 py-3 pl-4">
+                          <span className="text-sm font-medium text-gray-600">Total claim amount</span>
+                        </td>
+                        <td className="px-3 py-3 pr-5 text-right">
+                          <span className="text-base font-semibold text-gray-900 tabular-nums">{formatCurrency(totalAmount)}</span>
+                        </td>
+                        {canEdit && <td />}
+                      </tr>
+                    </tfoot>
+                  </table>
                 </div>
               )}
 

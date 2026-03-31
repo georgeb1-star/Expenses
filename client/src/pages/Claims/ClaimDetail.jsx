@@ -10,7 +10,7 @@ import { StatusTimeline } from '../../components/StatusTimeline';
 import { ConfirmModal } from '../../components/ConfirmModal';
 import { ItemForm } from './ItemForm';
 import { formatCurrency, formatDate } from '../../lib/utils';
-import { AlertCircle, AlertTriangle, Plus, Trash2, Upload, MessageSquare, CheckCircle2, ArrowLeft, FileText, ExternalLink } from 'lucide-react';
+import { AlertCircle, AlertTriangle, Plus, Trash2, Upload, MessageSquare, CheckCircle2, ArrowLeft, FileText, ExternalLink, Receipt } from 'lucide-react';
 import api from '../../api/client';
 
 const TABS = ['Details', 'Alerts', 'Comments', 'Receipts'];
@@ -395,6 +395,26 @@ export default function ClaimDetail() {
                 </div>
               )}
 
+              {/* Billing notice — shown whenever any item is billable to a client */}
+              {(() => {
+                const billableItems = allItems.filter((i) => i.billable && i.client_name);
+                if (!billableItems.length) return null;
+                const clients = [...new Set(billableItems.map((i) => i.client_name))];
+                return (
+                  <div className="flex items-start gap-3 px-4 py-3 bg-amber-50 border border-amber-200 rounded-md">
+                    <Receipt className="w-4 h-4 text-amber-600 flex-shrink-0 mt-0.5" />
+                    <div>
+                      <p className="text-sm font-semibold text-amber-800">
+                        Billable claim — {billableItems.length} item{billableItems.length > 1 ? 's' : ''} to be charged to client
+                      </p>
+                      <p className="text-xs text-amber-700 mt-0.5">
+                        Client{clients.length > 1 ? 's' : ''}: {clients.join(', ')}
+                      </p>
+                    </div>
+                  </div>
+                );
+              })()}
+
               {allItems.length === 0 ? (
                 <div className="py-12 text-center">
                   <p className="text-sm font-medium text-gray-600">No expense items added yet.</p>
@@ -465,7 +485,9 @@ export default function ClaimDetail() {
                                 </p>
                               )}
                               {item.billable && item.client_name && (
-                                <p className="text-[11px] text-gray-400 mt-0.5">Billable: {item.client_name}</p>
+                                <span className="inline-block mt-1 text-[11px] font-medium px-1.5 py-0.5 rounded bg-amber-50 text-amber-700 border border-amber-200">
+                                  Billable — {item.client_name}
+                                </span>
                               )}
                             </td>
                             {/* Date */}

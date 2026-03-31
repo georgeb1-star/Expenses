@@ -33,8 +33,8 @@ async function generateBatchCsv(batchId) {
       db.raw("CASE WHEN claim_items.type = 'mileage' THEN COALESCE(claim_items.reimbursement_amount, 0) ELSE COALESCE(claim_items.amount, 0) + COALESCE(claim_items.vat, 0) END as total"),
       'claim_items.currency',
       'claim_items.department',
-      'claim_items.project as project_code',
       'claim_items.billable',
+      'claim_items.client_name',
       'batches.id as batch_id',
       'batches.name as batch_name'
     )

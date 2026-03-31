@@ -18,7 +18,7 @@ export default function Finance() {
   useEffect(() => {
     claimsApi.list().then((r) => {
       setNeedsAudit(r.data.filter((c) => c.status === 'approved'));
-      setReadyToBatch(r.data.filter((c) => c.status === 'processing'));
+      setReadyToBatch(r.data.filter((c) => c.status === 'processing' && !c.batch_id));
     }).finally(() => setLoading(false));
   }, []);
 

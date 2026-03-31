@@ -3,7 +3,7 @@ const db = require('../db/connection');
 const authenticate = require('../middleware/auth');
 const allow = require('../middleware/rbac');
 const { transition, notify } = require('../services/workflowEngine');
-const { generateBatchCsv } = require('../services/exportService');
+const { generateBatchCsv, generateSageCsv } = require('../services/exportService');
 
 router.use(authenticate);
 
@@ -57,7 +57,10 @@ router.get('/:id/export', allow('processor', 'admin'), async (req, res) => {
   const batch = await db('batches').where({ id: req.params.id }).first();
   if (!batch) return res.status(404).json({ error: 'Batch not found' });
 
-  const csv = await generateBatchCsv(batch.id);
+  const format = req.query.format; // 'sage' or undefined
+  const csv = format === 'sage'
+    ? await generateSageCsv(batch.id)
+    : await generateBatchCsv(batch.id);
 
   // Mark batch as exported
   await db('batches').where({ id: batch.id }).update({ exported_at: db.fn.now() });
@@ -69,7 +72,8 @@ router.get('/:id/export', allow('processor', 'admin'), async (req, res) => {
     await notify([claim.user_id], claim.id, `Your claim "${claim.title}" has been exported to finance`);
   }
 
-  const filename = `batch-${batch.name.replace(/[^a-z0-9]/gi, '_')}-${Date.now()}.csv`;
+  const suffix = format === 'sage' ? '-sage50' : '';
+  const filename = `batch-${batch.name.replace(/[^a-z0-9]/gi, '_')}${suffix}-${Date.now()}.csv`;
   res.setHeader('Content-Type', 'text/csv');
   res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
   res.send(csv);

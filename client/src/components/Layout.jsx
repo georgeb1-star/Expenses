@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { Link, NavLink, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { notificationsApi } from '../api';
-import { Bell, ReceiptText, LayoutDashboard, ClipboardCheck, Landmark, Package, LogOut, ChevronRight, UserCog } from 'lucide-react';
+import { Bell, ReceiptText, LayoutDashboard, ClipboardCheck, Landmark, Package, LogOut, ChevronRight, UserCog, BarChart2 } from 'lucide-react';
 import { cn } from '../lib/utils';
 
 const ROLE_LABELS = {
@@ -31,6 +31,7 @@ export function Layout({ children }) {
     { to: '/approvals', icon: ClipboardCheck, label: 'Approvals', roles: ['manager', 'admin'] },
     { to: '/finance', icon: Landmark, label: 'Finance', roles: ['processor', 'admin'] },
     { to: '/batches', icon: Package, label: 'Batches', roles: ['processor', 'admin'] },
+    { to: '/reports', icon: BarChart2, label: 'Reports', roles: ['processor', 'admin', 'manager'] },
   ].filter((item) => item.roles.includes(user?.role));
 
   const initials = user?.name

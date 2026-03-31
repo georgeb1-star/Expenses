@@ -14,15 +14,17 @@ export default function Batches() {
     batchesApi.list().then((r) => setBatches(r.data)).finally(() => setLoading(false));
   }, []);
 
-  const handleExport = async (batch) => {
-    const { data } = await api.get(`/batches/${batch.id}/export`, { responseType: 'blob' });
+  const handleExport = async (batch, format) => {
+    const url = format ? `/batches/${batch.id}/export?format=${format}` : `/batches/${batch.id}/export`;
+    const { data } = await api.get(url, { responseType: 'blob' });
     const blob = new Blob([data], { type: 'text/csv;charset=utf-8;' });
-    const url = URL.createObjectURL(blob);
+    const objectUrl = URL.createObjectURL(blob);
     const a = document.createElement('a');
-    a.href = url;
-    a.download = `batch-${batch.name.replace(/[^a-z0-9]/gi, '_')}.csv`;
+    a.href = objectUrl;
+    const suffix = format === 'sage' ? '-sage50' : '';
+    a.download = `batch-${batch.name.replace(/[^a-z0-9]/gi, '_')}${suffix}.csv`;
     a.click();
-    URL.revokeObjectURL(url);
+    URL.revokeObjectURL(objectUrl);
     setBatches((prev) =>
       prev.map((b) => b.id === batch.id ? { ...b, exported_at: new Date().toISOString() } : b)
     );
@@ -64,12 +66,12 @@ export default function Batches() {
             <span className="text-[11px] font-semibold text-gray-500 uppercase tracking-wide">Batch</span>
             <span className="text-[11px] font-semibold text-gray-500 uppercase tracking-wide w-32">Created</span>
             <span className="text-[11px] font-semibold text-gray-500 uppercase tracking-wide w-28 text-center">Status</span>
-            <span className="text-[11px] font-semibold text-gray-500 uppercase tracking-wide w-24 text-right">Export</span>
+            <span className="text-[11px] font-semibold text-gray-500 uppercase tracking-wide w-40 text-right">Export</span>
           </div>
 
           <div className="divide-y divide-gray-100">
             {batches.map((batch) => (
-              <div key={batch.id} className="grid grid-cols-[1fr_auto_auto_auto] gap-4 items-center px-5 py-3.5 hover:bg-gray-50 transition-colors">
+              <div key={batch.id} className="grid grid-cols-[1fr_auto_auto_auto] gap-4 items-center px-5 py-3 hover:bg-gray-50 transition-colors">
                 {/* Batch info */}
                 <div>
                   <p className="text-sm font-medium text-gray-900">{batch.name}</p>
@@ -94,11 +96,15 @@ export default function Batches() {
                   )}
                 </div>
 
-                {/* Export action */}
-                <div className="w-24 flex justify-end">
+                {/* Export actions */}
+                <div className="w-40 flex items-center justify-end gap-2">
                   <Button size="sm" variant="outline" onClick={() => handleExport(batch)}>
                     <Download className="w-3.5 h-3.5 mr-1" />
                     CSV
+                  </Button>
+                  <Button size="sm" variant="outline" onClick={() => handleExport(batch, 'sage')}>
+                    <Download className="w-3.5 h-3.5 mr-1" />
+                    Sage 50
                   </Button>
                 </div>
               </div>

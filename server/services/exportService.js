@@ -43,4 +43,52 @@ async function generateBatchCsv(batchId) {
   return toCsv(items);
 }
 
-module.exports = { generateBatchCsv };
+const SAGE_NOMINAL = {
+  travel: '7400',
+  accommodation: '7404',
+  subsistence: '7406',
+  entertainment: '7900',
+  equipment: '7800',
+  mileage: '0020',
+};
+
+async function generateSageCsv(batchId) {
+  const rows = await db('claim_items')
+    .join('claims', 'claim_items.claim_id', 'claims.id')
+    .join('users', 'claims.user_id', 'users.id')
+    .join('batches', 'claims.batch_id', 'batches.id')
+    .where('claims.batch_id', batchId)
+    .select(
+      'users.employee_id',
+      'claims.id as claim_id',
+      db.raw("COALESCE(claim_items.expense_type, claim_items.type) as category"),
+      'claim_items.transaction_date',
+      'claim_items.business_purpose',
+      db.raw('COALESCE(claim_items.reimbursement_amount, claim_items.amount, 0) as net'),
+      'claim_items.vat',
+      'users.department'
+    )
+    .orderBy(['claims.id', 'claim_items.transaction_date']);
+
+  const sageRows = rows.map((r) => {
+    const nominalCode = SAGE_NOMINAL[r.category] || '7400';
+    const d = new Date(r.transaction_date);
+    const date = `${String(d.getDate()).padStart(2, '0')}/${String(d.getMonth() + 1).padStart(2, '0')}/${d.getFullYear()}`;
+    return {
+      Type: 'PI',
+      'Account Reference': r.employee_id || '',
+      'Nominal Code': nominalCode,
+      Department: r.department || '',
+      Date: date,
+      Ref: `CLM-${r.claim_id}`,
+      Details: r.business_purpose || '',
+      'Net Amount': parseFloat(r.net).toFixed(2),
+      'Tax Code': parseFloat(r.vat) > 0 ? 'T1' : 'T0',
+      'Tax Amount': parseFloat(r.vat || 0).toFixed(2),
+    };
+  });
+
+  return toCsv(sageRows);
+}
+
+module.exports = { generateBatchCsv, generateSageCsv };

@@ -61,12 +61,27 @@ router.get('/summary', allow('processor', 'admin', 'manager'), async (req, res) 
     .orderBy('month', 'asc')
     .limit(12);
 
+  const topSpenders = await q.clone()
+    .groupBy('users.id', 'users.name', 'users.department')
+    .select(
+      'users.name',
+      'users.department',
+      db.raw('SUM(COALESCE(claim_items.amount, claim_items.reimbursement_amount, 0)) as amount'),
+      db.raw('COUNT(DISTINCT claims.id) as claim_count')
+    )
+    .orderBy('amount', 'desc')
+    .limit(10);
+
+  const itemCount = await q.clone().count('claim_items.id as count').first();
+
   res.json({
     total_amount: parseFloat(totalRow.total_amount || 0),
     total_vat: parseFloat(totalRow.total_vat || 0),
+    item_count: parseInt(itemCount.count || 0),
     by_category: byCategory,
     by_department: byDepartment,
     monthly_trend: monthly,
+    top_spenders: topSpenders,
   });
 });
 

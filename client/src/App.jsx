@@ -14,6 +14,7 @@ import Finance from './pages/Finance';
 import Batches from './pages/Batches';
 import Notifications from './pages/Notifications';
 import Profile from './pages/Profile';
+import Reports from './pages/Reports';
 
 function AppLayout({ children, roles }) {
   return (
@@ -39,6 +40,7 @@ export default function App() {
           <Route path="/approvals" element={<AppLayout roles={['manager', 'admin']}><Approvals /></AppLayout>} />
           <Route path="/finance" element={<AppLayout roles={['processor', 'admin']}><Finance /></AppLayout>} />
           <Route path="/batches" element={<AppLayout roles={['processor', 'admin']}><Batches /></AppLayout>} />
+          <Route path="/reports" element={<AppLayout roles={['processor', 'admin', 'manager']}><Reports /></AppLayout>} />
           <Route path="/notifications" element={<AppLayout><Notifications /></AppLayout>} />
           <Route path="/profile" element={<AppLayout><Profile /></AppLayout>} />
 

@@ -85,6 +85,120 @@ router.get('/summary', allow('processor', 'admin', 'manager'), async (req, res) 
   });
 });
 
+// GET /api/reports/team-summary — team spend data scoped to the manager's direct reports
+router.get('/team-summary', async (req, res) => {
+  if (!['manager', 'admin'].includes(req.user.role)) {
+    return res.status(403).json({ error: 'Forbidden' });
+  }
+  const managerId = req.user.id;
+
+  // Pending claims (submitted/manager_review assigned to this manager)
+  const pendingClaims = await db('claims')
+    .whereIn('status', ['submitted', 'manager_review'])
+    .where('manager_id', managerId);
+  const pendingIds = pendingClaims.map((c) => c.id);
+
+  let pendingAmount = 0;
+  if (pendingIds.length) {
+    const [row] = await db('claim_items')
+      .whereIn('claim_id', pendingIds)
+      .sum({ total: db.raw('COALESCE(amount, reimbursement_amount, 0)') });
+    pendingAmount = parseFloat(row.total || 0);
+  }
+
+  // Approved/exported base query (team spend)
+  const approvedBase = db('claim_items')
+    .join('claims', 'claim_items.claim_id', 'claims.id')
+    .whereIn('claims.status', ['approved', 'processing', 'exported'])
+    .where('claims.manager_id', managerId);
+
+  // All-time approved total
+  const [totalRow] = await approvedBase.clone()
+    .sum({ total: db.raw('COALESCE(claim_items.amount, claim_items.reimbursement_amount, 0)') });
+
+  // This month's approved total
+  const now = new Date();
+  const monthStart = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-01`;
+  const monthEnd = new Date(now.getFullYear(), now.getMonth() + 1, 0).toISOString().slice(0, 10);
+  const [monthRow] = await approvedBase.clone()
+    .whereBetween('claim_items.transaction_date', [monthStart, monthEnd])
+    .sum({ total: db.raw('COALESCE(claim_items.amount, claim_items.reimbursement_amount, 0)') });
+
+  // Team size
+  const [{ count: teamSize }] = await db('users').where({ manager_id: managerId }).count('id as count');
+
+  // By category
+  const byCategory = await approvedBase.clone()
+    .groupBy('claim_items.expense_type', 'claim_items.type')
+    .select(
+      db.raw("COALESCE(claim_items.expense_type, claim_items.type) as category"),
+      db.raw('SUM(COALESCE(claim_items.amount, claim_items.reimbursement_amount, 0)) as amount')
+    )
+    .orderBy('amount', 'desc')
+    .limit(6);
+
+  // Monthly trend (last 6 months)
+  const sixMonthsAgo = new Date();
+  sixMonthsAgo.setMonth(sixMonthsAgo.getMonth() - 6);
+  const trendCutoff = sixMonthsAgo.toISOString().slice(0, 10);
+  const monthlyTrend = await approvedBase.clone()
+    .where('claim_items.transaction_date', '>=', trendCutoff)
+    .groupBy(db.raw("TO_CHAR(claim_items.transaction_date, 'YYYY-MM')"))
+    .select(
+      db.raw("TO_CHAR(claim_items.transaction_date, 'YYYY-MM') as month"),
+      db.raw('SUM(COALESCE(claim_items.amount, claim_items.reimbursement_amount, 0)) as amount')
+    )
+    .orderBy('month', 'asc');
+
+  // Per-employee breakdown (team members with approved spend + pending count)
+  const teamMembers = await db('users').where({ manager_id: managerId }).select('id', 'name', 'department');
+  const teamIds = teamMembers.map((u) => u.id);
+
+  let employeeSpend = [];
+  if (teamIds.length) {
+    employeeSpend = await db('claim_items')
+      .join('claims', 'claim_items.claim_id', 'claims.id')
+      .whereIn('claims.status', ['approved', 'processing', 'exported'])
+      .whereIn('claims.user_id', teamIds)
+      .groupBy('claims.user_id')
+      .select(
+        'claims.user_id',
+        db.raw('SUM(COALESCE(claim_items.amount, claim_items.reimbursement_amount, 0)) as total_amount'),
+        db.raw('COUNT(DISTINCT claims.id) as claim_count')
+      );
+  }
+
+  const pendingByEmployee = pendingIds.length
+    ? await db('claims')
+        .whereIn('id', pendingIds)
+        .groupBy('user_id')
+        .select('user_id', db.raw('COUNT(*) as pending_count'))
+    : [];
+
+  const spendMap = Object.fromEntries(employeeSpend.map((e) => [e.user_id, e]));
+  const pendingMap = Object.fromEntries(pendingByEmployee.map((e) => [e.user_id, Number(e.pending_count)]));
+
+  const byEmployee = teamMembers.map((u) => ({
+    id: u.id,
+    name: u.name,
+    department: u.department,
+    total_amount: parseFloat(spendMap[u.id]?.total_amount || 0),
+    claim_count: parseInt(spendMap[u.id]?.claim_count || 0),
+    pending_count: pendingMap[u.id] || 0,
+  })).sort((a, b) => b.total_amount - a.total_amount);
+
+  res.json({
+    pending_count: pendingClaims.length,
+    pending_amount: pendingAmount,
+    approved_this_month: parseFloat(monthRow.total || 0),
+    total_approved: parseFloat(totalRow.total || 0),
+    team_size: parseInt(teamSize || 0),
+    by_category: byCategory,
+    monthly_trend: monthlyTrend,
+    by_employee: byEmployee,
+  });
+});
+
 // GET /api/reports/employee-summary — personal spend data for the logged-in user
 // Data only includes items from claims approved by the processor (status = processing or exported)
 router.get('/employee-summary', async (req, res) => {

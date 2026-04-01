@@ -42,8 +42,19 @@ router.get('/', async (req, res) => {
     .groupBy('claim_id')
     .select('claim_id', db.raw('count(*) as count'));
 
+  // Attach item totals
+  const itemTotals = await db('claim_items')
+    .whereIn('claim_id', claimIds)
+    .groupBy('claim_id')
+    .select('claim_id', db.raw('SUM(COALESCE(amount, reimbursement_amount, 0)) as total_amount'));
+  const totalMap = Object.fromEntries(itemTotals.map((t) => [t.claim_id, parseFloat(t.total_amount || 0)]));
+
   const countMap = Object.fromEntries(alertCounts.map((a) => [a.claim_id, Number(a.count)]));
-  const result = claims.map((c) => ({ ...c, alert_count: countMap[c.id] || 0 }));
+  const result = claims.map((c) => ({
+    ...c,
+    alert_count: countMap[c.id] || 0,
+    total_amount: totalMap[c.id] || 0,
+  }));
 
   res.json(result);
 });

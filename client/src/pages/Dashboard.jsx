@@ -18,6 +18,7 @@ export default function Dashboard() {
   const [claims, setClaims] = useState([]);
   const [summary, setSummary] = useState(null);
   const [employeeSummary, setEmployeeSummary] = useState(null);
+  const [teamSummary, setTeamSummary] = useState(null);
   const [loading, setLoading] = useState(true);
   const [showNewClaimModal, setShowNewClaimModal] = useState(false);
 
@@ -30,10 +31,12 @@ export default function Dashboard() {
       claimsApi.list(),
       ['processor', 'admin', 'manager'].includes(user.role) ? reportsApi.summary() : Promise.resolve(null),
       user.role === 'employee' ? reportsApi.employeeSummary() : Promise.resolve(null),
-    ]).then(([claimsRes, summaryRes, empRes]) => {
+      ['manager', 'admin'].includes(user.role) ? reportsApi.teamSummary() : Promise.resolve(null),
+    ]).then(([claimsRes, summaryRes, empRes, teamRes]) => {
       setClaims(claimsRes.data);
       if (summaryRes) setSummary(summaryRes.data);
       if (empRes) setEmployeeSummary(empRes.data);
+      if (teamRes) setTeamSummary(teamRes.data);
     }).finally(() => setLoading(false));
   }, [user.role]);
 
@@ -289,6 +292,93 @@ export default function Dashboard() {
           </CardContent>
         </Card>
       </div>
+
+      {/* Manager team spend overview */}
+      {['manager', 'admin'].includes(user.role) && teamSummary && (
+        <div className="space-y-4">
+          <h2 className="text-sm font-semibold text-gray-700">Team Overview</h2>
+
+          {/* Stat row */}
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+            <div className="bg-white border border-gray-200 rounded-lg px-4 py-3 sm:px-5 sm:py-4">
+              <p className="text-xs text-gray-500 font-medium uppercase tracking-wide">Pending Approval</p>
+              <p className="text-xl sm:text-2xl font-semibold text-amber-700 mt-1 tabular-nums">{teamSummary.pending_count}</p>
+              <p className="text-xs text-gray-400 mt-0.5 tabular-nums">{formatCurrency(teamSummary.pending_amount)} total</p>
+            </div>
+            <div className="bg-white border border-gray-200 rounded-lg px-4 py-3 sm:px-5 sm:py-4">
+              <p className="text-xs text-gray-500 font-medium uppercase tracking-wide">Team Spend (Month)</p>
+              <p className="text-xl sm:text-2xl font-semibold text-gray-900 mt-1 tabular-nums">{formatCurrency(teamSummary.approved_this_month)}</p>
+            </div>
+            <div className="bg-white border border-gray-200 rounded-lg px-4 py-3 sm:px-5 sm:py-4">
+              <p className="text-xs text-gray-500 font-medium uppercase tracking-wide">Total Approved</p>
+              <p className="text-xl sm:text-2xl font-semibold text-gray-900 mt-1 tabular-nums">{formatCurrency(teamSummary.total_approved)}</p>
+            </div>
+            <div className="bg-white border border-gray-200 rounded-lg px-4 py-3 sm:px-5 sm:py-4">
+              <p className="text-xs text-gray-500 font-medium uppercase tracking-wide">Team Size</p>
+              <p className="text-xl sm:text-2xl font-semibold text-gray-900 mt-1 tabular-nums">{teamSummary.team_size}</p>
+              <p className="text-xs text-gray-400 mt-0.5">direct reports</p>
+            </div>
+          </div>
+
+          {/* Category + team members */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+            <Card>
+              <CardHeader><CardTitle>Spend by Category</CardTitle></CardHeader>
+              <CardContent>
+                {teamSummary.by_category?.length > 0 ? (
+                  <div className="space-y-2.5">
+                    {teamSummary.by_category.map((cat, i) => {
+                      const total = teamSummary.by_category.reduce((s, c) => s + parseFloat(c.amount || 0), 0);
+                      const pct = total > 0 ? Math.round((parseFloat(cat.amount || 0) / total) * 100) : 0;
+                      return (
+                        <div key={cat.category} className="space-y-1">
+                          <div className="flex items-center justify-between text-xs">
+                            <span className="text-gray-700 font-medium capitalize">{cat.category || 'Other'}</span>
+                            <span className="text-gray-500 tabular-nums">{formatCurrency(cat.amount)}</span>
+                          </div>
+                          <div className="h-1.5 bg-gray-100 rounded-full overflow-hidden">
+                            <div className="h-full rounded-full" style={{ width: `${pct}%`, backgroundColor: CATEGORY_COLORS[i % CATEGORY_COLORS.length] }} />
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                ) : (
+                  <p className="text-sm text-gray-500 py-4 text-center">No approved spend yet.</p>
+                )}
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader><CardTitle>Team Members</CardTitle></CardHeader>
+              <CardContent className="p-0">
+                {teamSummary.by_employee?.length > 0 ? (
+                  <div className="divide-y divide-gray-100">
+                    {teamSummary.by_employee.map((emp) => (
+                      <div key={emp.id} className="flex items-center justify-between px-5 py-2.5">
+                        <div className="min-w-0 flex-1">
+                          <div className="flex items-center gap-2">
+                            <p className="text-sm font-medium text-gray-800 truncate">{emp.name}</p>
+                            {emp.pending_count > 0 && (
+                              <span className="flex-shrink-0 text-[10px] font-semibold bg-amber-100 text-amber-700 px-1.5 py-0.5 rounded">
+                                {emp.pending_count} pending
+                              </span>
+                            )}
+                          </div>
+                          <p className="text-xs text-gray-400 mt-0.5">{emp.department || 'No department'} · {emp.claim_count} claim{emp.claim_count !== 1 ? 's' : ''}</p>
+                        </div>
+                        <span className="text-sm font-semibold text-gray-900 tabular-nums ml-4">{formatCurrency(emp.total_amount)}</span>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="text-sm text-gray-500 py-4 text-center px-5">No team members assigned yet.</p>
+                )}
+              </CardContent>
+            </Card>
+          </div>
+        </div>
+      )}
 
       {/* Employee spend overview */}
       {user.role === 'employee' && employeeSummary && (

@@ -50,12 +50,29 @@ router.get('/', async (req, res) => {
 
 // POST /api/claims
 router.post('/', async (req, res) => {
-  const { title } = req.body;
+  const { title, template_id } = req.body;
   if (!title) return res.status(400).json({ error: 'title is required' });
 
   const [claim] = await db('claims')
     .insert({ user_id: req.user.id, title, status: 'draft' })
     .returning('*');
+
+  if (template_id) {
+    const template = await db('claim_templates')
+      .where({ id: template_id, user_id: req.user.id })
+      .first();
+    if (template) {
+      const items = Array.isArray(template.items)
+        ? template.items
+        : JSON.parse(template.items || '[]');
+      const today = new Date().toISOString().slice(0, 10);
+      for (const item of items) {
+        const { id, claim_id, transaction_date, reimbursement_amount, receipts, created_at, updated_at, ...fields } = item;
+        await db('claim_items').insert({ ...fields, claim_id: claim.id, transaction_date: today });
+      }
+    }
+  }
+
   res.status(201).json(claim);
 });
 

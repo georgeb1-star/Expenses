@@ -2,7 +2,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import { Button } from './ui/Button';
 import { Input } from './ui/Input';
 import { FileText, Bookmark, X, CheckCircle2 } from 'lucide-react';
-import { claimsApi, itemsApi, templatesApi } from '../api';
+import { claimsApi, templatesApi } from '../api';
 
 export function NewClaimModal({ onSuccess, onCancel }) {
   const [title, setTitle] = useState('');
@@ -21,13 +21,10 @@ export function NewClaimModal({ onSuccess, onCancel }) {
     if (!title.trim()) return;
     setCreating(true);
     try {
-      const { data: claim } = await claimsApi.create({ title: title.trim() });
-      if (selectedTemplate) {
-        const today = new Date().toISOString().slice(0, 10);
-        for (const item of selectedTemplate.items) {
-          await itemsApi.create(claim.id, { ...item, transaction_date: today });
-        }
-      }
+      const { data: claim } = await claimsApi.create({
+        title: title.trim(),
+        template_id: selectedTemplate?.id ?? null,
+      });
       onSuccess(claim.id);
     } catch {
       setCreating(false);

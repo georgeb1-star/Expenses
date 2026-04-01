@@ -20,9 +20,8 @@ export default function Dashboard() {
   const [loading, setLoading] = useState(true);
   const [showNewClaimModal, setShowNewClaimModal] = useState(false);
 
-  const handleCreate = async (title) => {
-    const { data } = await claimsApi.create({ title });
-    navigate(`/claims/${data.id}`);
+  const handleCreate = (claimId) => {
+    navigate(`/claims/${claimId}`);
   };
 
   useEffect(() => {
@@ -61,7 +60,7 @@ export default function Dashboard() {
     <div className="space-y-7">
       {showNewClaimModal && (
         <NewClaimModal
-          onConfirm={handleCreate}
+          onSuccess={handleCreate}
           onCancel={() => setShowNewClaimModal(false)}
         />
       )}

@@ -1,22 +1,44 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { Button } from './ui/Button';
 import { Input } from './ui/Input';
-import { FileText } from 'lucide-react';
+import { FileText, Bookmark, X, CheckCircle2 } from 'lucide-react';
+import { claimsApi, itemsApi, templatesApi } from '../api';
 
-export function NewClaimModal({ onConfirm, onCancel }) {
+export function NewClaimModal({ onSuccess, onCancel }) {
   const [title, setTitle] = useState('');
   const [creating, setCreating] = useState(false);
+  const [templates, setTemplates] = useState([]);
+  const [selectedTemplate, setSelectedTemplate] = useState(null);
   const inputRef = useRef(null);
 
   useEffect(() => {
     inputRef.current?.focus();
+    templatesApi.list().then((r) => setTemplates(r.data)).catch(() => {});
   }, []);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!title.trim()) return;
     setCreating(true);
-    await onConfirm(title.trim());
+    try {
+      const { data: claim } = await claimsApi.create({ title: title.trim() });
+      if (selectedTemplate) {
+        const today = new Date().toISOString().slice(0, 10);
+        for (const item of selectedTemplate.items) {
+          await itemsApi.create(claim.id, { ...item, transaction_date: today });
+        }
+      }
+      onSuccess(claim.id);
+    } catch {
+      setCreating(false);
+    }
+  };
+
+  const handleDeleteTemplate = async (e, id) => {
+    e.stopPropagation();
+    await templatesApi.delete(id);
+    setTemplates((prev) => prev.filter((t) => t.id !== id));
+    if (selectedTemplate?.id === id) setSelectedTemplate(null);
   };
 
   return (
@@ -47,6 +69,56 @@ export function NewClaimModal({ onConfirm, onCancel }) {
               className="h-10"
             />
           </div>
+
+          {templates.length > 0 && (
+            <div className="space-y-1.5">
+              <label className="text-sm font-medium text-gray-700 flex items-center gap-1.5">
+                <Bookmark className="w-3.5 h-3.5 text-gray-400" />
+                Start from a template
+                <span className="text-xs font-normal text-gray-400">(optional)</span>
+              </label>
+              <div className="space-y-1.5 max-h-48 overflow-y-auto">
+                {templates.map((t) => {
+                  const isSelected = selectedTemplate?.id === t.id;
+                  return (
+                    <button
+                      key={t.id}
+                      type="button"
+                      onClick={() => setSelectedTemplate(isSelected ? null : t)}
+                      className={`w-full flex items-center justify-between gap-2 px-3 py-2.5 rounded border text-left transition-colors ${
+                        isSelected
+                          ? 'border-red-300 bg-red-50'
+                          : 'border-gray-200 bg-white hover:border-gray-300 hover:bg-gray-50'
+                      }`}
+                    >
+                      <div className="flex items-center gap-2 min-w-0">
+                        {isSelected
+                          ? <CheckCircle2 className="w-3.5 h-3.5 text-red-600 flex-shrink-0" />
+                          : <Bookmark className="w-3.5 h-3.5 text-gray-400 flex-shrink-0" />
+                        }
+                        <span className={`text-sm font-medium truncate ${isSelected ? 'text-red-800' : 'text-gray-800'}`}>
+                          {t.name}
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-2 flex-shrink-0">
+                        <span className="text-xs text-gray-400">
+                          {t.items?.length ?? 0} item{(t.items?.length ?? 0) !== 1 ? 's' : ''}
+                        </span>
+                        <span
+                          role="button"
+                          onClick={(e) => handleDeleteTemplate(e, t.id)}
+                          className="text-gray-300 hover:text-red-500 transition-colors p-0.5 rounded"
+                          title="Delete template"
+                        >
+                          <X className="w-3 h-3" />
+                        </span>
+                      </div>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          )}
 
           <div className="flex justify-end gap-2 pt-1">
             <Button type="button" variant="outline" size="sm" onClick={onCancel} disabled={creating}>

@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { claimsApi, alertsApi, commentsApi, receiptsApi, itemsApi } from '../../api';
+import { claimsApi, alertsApi, commentsApi, receiptsApi, itemsApi, templatesApi } from '../../api';
 import { useAuth } from '../../context/AuthContext';
 import { Card, CardHeader, CardTitle, CardContent } from '../../components/ui/Card';
 import { Button } from '../../components/ui/Button';
@@ -10,7 +10,7 @@ import { StatusTimeline } from '../../components/StatusTimeline';
 import { ConfirmModal } from '../../components/ConfirmModal';
 import { ItemForm } from './ItemForm';
 import { formatCurrency, formatDate } from '../../lib/utils';
-import { AlertCircle, AlertTriangle, Plus, Trash2, Upload, MessageSquare, CheckCircle2, ArrowLeft, FileText, ExternalLink, Receipt } from 'lucide-react';
+import { AlertCircle, AlertTriangle, Plus, Trash2, Upload, MessageSquare, CheckCircle2, ArrowLeft, FileText, ExternalLink, Receipt, BookmarkPlus } from 'lucide-react';
 import api from '../../api/client';
 
 const TABS = ['Details', 'Alerts', 'Comments', 'Receipts'];
@@ -32,6 +32,10 @@ export default function ClaimDetail() {
   const [error, setError] = useState('');
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [confirmDeleteItemId, setConfirmDeleteItemId] = useState(null);
+  const [showSaveTemplate, setShowSaveTemplate] = useState(false);
+  const [templateName, setTemplateName] = useState('');
+  const [templateSaved, setTemplateSaved] = useState(false);
+  const [savingTemplate, setSavingTemplate] = useState(false);
 
   const isOwner = claim?.user_id === user.id;
   const isDraft = claim?.status === 'draft';
@@ -124,6 +128,20 @@ export default function ClaimDetail() {
     await load();
   };
 
+  const handleSaveTemplate = async () => {
+    if (!templateName.trim()) return;
+    setSavingTemplate(true);
+    try {
+      await templatesApi.create({ name: templateName.trim(), items: claim.items });
+      setTemplateSaved(true);
+      setShowSaveTemplate(false);
+      setTemplateName('');
+      setTimeout(() => setTemplateSaved(false), 3000);
+    } finally {
+      setSavingTemplate(false);
+    }
+  };
+
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
@@ -187,6 +205,41 @@ export default function ClaimDetail() {
           </p>
         </div>
         <div className="flex items-center gap-2 flex-shrink-0">
+          {templateSaved && (
+            <span className="flex items-center gap-1 text-xs text-emerald-700 font-medium">
+              <CheckCircle2 className="w-3.5 h-3.5" />
+              Template saved
+            </span>
+          )}
+          {canEdit && allItems.length > 0 && !showSaveTemplate && (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => { setTemplateName(claim.title); setShowSaveTemplate(true); }}
+            >
+              <BookmarkPlus className="w-3.5 h-3.5 mr-1.5" />
+              Save as Template
+            </Button>
+          )}
+          {showSaveTemplate && (
+            <div className="flex items-center gap-2">
+              <input
+                autoFocus
+                type="text"
+                value={templateName}
+                onChange={(e) => setTemplateName(e.target.value)}
+                onKeyDown={(e) => { if (e.key === 'Enter') handleSaveTemplate(); if (e.key === 'Escape') setShowSaveTemplate(false); }}
+                placeholder="Template name"
+                className="h-8 w-44 rounded border border-gray-300 px-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-red-600 focus:border-red-600"
+              />
+              <Button size="sm" onClick={handleSaveTemplate} disabled={!templateName.trim() || savingTemplate}>
+                {savingTemplate ? 'Saving…' : 'Save'}
+              </Button>
+              <button onClick={() => setShowSaveTemplate(false)} className="text-sm text-gray-500 hover:text-gray-700">
+                Cancel
+              </button>
+            </div>
+          )}
           {canEdit && (
             <Button
               variant="outline"

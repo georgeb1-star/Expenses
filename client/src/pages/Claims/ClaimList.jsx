@@ -35,9 +35,8 @@ export default function ClaimList() {
     claimsApi.list().then((r) => setClaims(r.data)).finally(() => setLoading(false));
   }, []);
 
-  const handleCreate = async (title) => {
-    const { data } = await claimsApi.create({ title });
-    navigate(`/claims/${data.id}`);
+  const handleCreate = (claimId) => {
+    navigate(`/claims/${claimId}`);
   };
 
   const filtered = claims.filter((c) => {
@@ -54,7 +53,7 @@ export default function ClaimList() {
     <div className="space-y-6">
       {showNewClaimModal && (
         <NewClaimModal
-          onConfirm={handleCreate}
+          onSuccess={handleCreate}
           onCancel={() => setShowNewClaimModal(false)}
         />
       )}

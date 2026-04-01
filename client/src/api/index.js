@@ -85,3 +85,10 @@ export const reportsApi = {
 export const mileageApi = {
   calculate: (from, to) => api.post('/mileage/calculate', { from, to }),
 };
+
+// Templates
+export const templatesApi = {
+  list: () => api.get('/templates'),
+  create: (data) => api.post('/templates', data),
+  delete: (id) => api.delete(`/templates/${id}`),
+};

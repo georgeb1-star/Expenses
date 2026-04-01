@@ -347,6 +347,7 @@ export default function Dashboard() {
                       axisLine={false}
                       tickLine={false}
                       tickFormatter={(v) => `£${v}`}
+                      domain={[0, (dataMax) => Math.ceil(dataMax * 1.25)]}
                     />
                     <Tooltip
                       formatter={(v) => [formatCurrency(v), 'Spend']}

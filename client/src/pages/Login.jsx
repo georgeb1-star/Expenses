@@ -34,7 +34,7 @@ export default function Login() {
           <img
             src="/citipost-logo.png"
             alt="Citipost"
-            className="h-14 w-auto mb-8 brightness-0 invert"
+            className="h-14 w-auto mb-8"
             draggable={false}
           />
           <div className="w-10 h-px bg-white/30 mb-6" />

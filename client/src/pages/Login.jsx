@@ -31,7 +31,6 @@ export default function Login() {
       {/* Brand panel */}
       <div className="bg-red-800 md:w-[420px] md:flex-shrink-0 flex flex-col items-center justify-center px-10 py-12 md:py-0">
         <div className="flex flex-col items-center text-center">
-          <p className="text-3xl font-bold tracking-tight text-white mb-6">CITIPOST</p>
           <div className="w-10 h-px bg-white/30 mb-6" />
           <h1 className="text-2xl font-semibold text-white leading-snug mb-3">
             Expense Management

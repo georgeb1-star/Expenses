@@ -45,7 +45,7 @@ export default function Dashboard() {
 
   const pendingApprovals = claims.filter((c) => c.status === 'manager_review');
   const readyForAudit = claims.filter((c) => c.status === 'audit');
-  const readyToBatch = claims.filter((c) => c.status === 'processing');
+  const readyToBatch = claims.filter((c) => c.status === 'processing' && !c.batch_id);
   const processing = claims.filter((c) => c.status === 'processing');
 
   if (loading) {

@@ -194,6 +194,7 @@ router.post('/:id/submit', async (req, res, next) => {
   const claim = await db('claims').where({ id: req.params.id }).first();
   if (!claim) return res.status(404).json({ error: 'Claim not found' });
   if (claim.user_id !== req.user.id) return res.status(403).json({ error: 'Forbidden' });
+  if (claim.status !== 'draft') return res.status(422).json({ error: 'Only draft claims can be submitted' });
 
   const items = await db('claim_items').where({ claim_id: claim.id });
   if (!items.length) return res.status(422).json({ error: 'Cannot submit a claim with no items' });
@@ -370,7 +371,7 @@ router.post('/:id/audit-reject', async (req, res) => {
         claimTitle: claim.title,
         claimId: claim.id,
         comment,
-      });
+      }).catch(() => {});
     }
     res.json(updated);
   } catch (err) {

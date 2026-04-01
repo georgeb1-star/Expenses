@@ -25,9 +25,7 @@ export default function Finance() {
     }).finally(() => setLoading(false));
   }, []);
 
-  const allSelected = selected.length === readyToBatch.length && readyToBatch.length > 0;
   const toggleSelect = (id) => setSelected((prev) => prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]);
-  const toggleAll = () => setSelected(allSelected ? [] : readyToBatch.map((c) => c.id));
 
   const handleCreateBatch = async () => {
     if (!batchName.trim()) { setError('Enter a batch name before creating.'); return; }
@@ -63,6 +61,9 @@ export default function Finance() {
     c.owner_name?.toLowerCase().includes(batchSearch.toLowerCase()) ||
     c.owner_department?.toLowerCase().includes(batchSearch.toLowerCase())
   );
+
+  const allSelected = selected.length === filteredBatch.length && filteredBatch.length > 0;
+  const toggleAll = () => setSelected(allSelected ? [] : filteredBatch.map((c) => c.id));
 
   return (
     <div className="space-y-8">

@@ -15,7 +15,7 @@ export default function Batches() {
   }, []);
 
   const handleExport = async (batch, format) => {
-    const url = format ? `/batches/${batch.id}/export?format=${format}` : `/batches/${batch.id}/export`;
+    const url = format ? `batches/${batch.id}/export?format=${format}` : `batches/${batch.id}/export`;
     const { data } = await api.get(url, { responseType: 'blob' });
     const blob = new Blob([data], { type: 'text/csv;charset=utf-8;' });
     const objectUrl = URL.createObjectURL(blob);

@@ -30,8 +30,12 @@ export default function Notifications() {
 
   const markRead = async (id) => {
     await notificationsApi.markRead(id);
-    setNotifications((prev) => prev.map((n) => n.id === id ? { ...n, read: true } : n));
-    window.dispatchEvent(new CustomEvent('notifications-cleared', { detail: { unread: Math.max(0, unread.length - 1) } }));
+    setNotifications((prev) => {
+      const updated = prev.map((n) => n.id === id ? { ...n, read: true } : n);
+      const newUnreadCount = updated.filter((n) => !n.read).length;
+      window.dispatchEvent(new CustomEvent('notifications-cleared', { detail: { unread: newUnreadCount } }));
+      return updated;
+    });
   };
 
   const markAllRead = async () => {

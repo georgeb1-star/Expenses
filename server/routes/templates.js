@@ -30,7 +30,7 @@ router.post('/', async (req, res, next) => {
     });
 
     const [template] = await db('claim_templates')
-      .insert({ user_id: req.user.id, name: name.trim().slice(0, 80), items: JSON.stringify(templateItems) })
+      .insert({ user_id: req.user.id, name: name.trim().slice(0, 80), items: templateItems })
       .returning('*');
 
     res.status(201).json(template);

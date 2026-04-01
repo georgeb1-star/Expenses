@@ -29,7 +29,7 @@ export default function Dashboard() {
   useEffect(() => {
     Promise.all([
       claimsApi.list(),
-      ['processor', 'admin', 'manager'].includes(user.role) ? reportsApi.summary() : Promise.resolve(null),
+      ['processor', 'admin'].includes(user.role) ? reportsApi.summary() : Promise.resolve(null),
       user.role === 'employee' ? reportsApi.employeeSummary() : Promise.resolve(null),
       ['manager', 'admin'].includes(user.role) ? reportsApi.teamSummary() : Promise.resolve(null),
     ]).then(([claimsRes, summaryRes, empRes, teamRes]) => {
@@ -527,8 +527,8 @@ export default function Dashboard() {
         </div>
       )}
 
-      {/* Finance charts — managers and processors only */}
-      {summary && (
+      {/* Finance charts — processors and admins only (managers have team-specific charts above) */}
+      {summary && ['processor', 'admin'].includes(user.role) && (
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           {/* Spend by category */}
           <Card>

@@ -13,6 +13,7 @@ const batchesRoutes = require('./routes/batches');
 const reportsRoutes = require('./routes/reports');
 const mileageRoutes = require('./routes/mileage');
 const templatesRoutes = require('./routes/templates');
+const usersRoutes = require('./routes/users');
 
 const app = express();
 
@@ -39,6 +40,7 @@ app.use('/api/batches', batchesRoutes);
 app.use('/api/reports', reportsRoutes);
 app.use('/api/mileage', mileageRoutes);
 app.use('/api/templates', templatesRoutes);
+app.use('/api/users', usersRoutes);
 
 // Global error handler
 app.use((err, req, res, next) => {

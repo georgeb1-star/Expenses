@@ -87,6 +87,14 @@ export const mileageApi = {
   calculate: (from, to) => api.post('/mileage/calculate', { from, to }),
 };
 
+// Users (admin)
+export const usersApi = {
+  list: (params) => api.get('/users', { params }),
+  create: (data) => api.post('/users', data),
+  update: (id, data) => api.patch(`/users/${id}`, data),
+  delete: (id) => api.delete(`/users/${id}`),
+};
+
 // Templates
 export const templatesApi = {
   list: () => api.get('/templates'),

@@ -7,7 +7,7 @@ import { Button } from '../components/ui/Button';
 import { StatusBadge } from '../components/StatusBadge';
 import { NewClaimModal } from '../components/NewClaimModal';
 import { formatCurrency, formatDate } from '../lib/utils';
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
+import { BarChart, Bar, AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { FileText, Clock, CheckCircle, Send, ArrowRight, AlertCircle, Plus, Package, Search, TrendingUp } from 'lucide-react';
 
 const CATEGORY_COLORS = ['#CC1719', '#16A34A', '#D97706', '#7C3AED', '#0891B2', '#D97706'];
@@ -17,6 +17,7 @@ export default function Dashboard() {
   const navigate = useNavigate();
   const [claims, setClaims] = useState([]);
   const [summary, setSummary] = useState(null);
+  const [employeeSummary, setEmployeeSummary] = useState(null);
   const [loading, setLoading] = useState(true);
   const [showNewClaimModal, setShowNewClaimModal] = useState(false);
 
@@ -28,9 +29,11 @@ export default function Dashboard() {
     Promise.all([
       claimsApi.list(),
       ['processor', 'admin', 'manager'].includes(user.role) ? reportsApi.summary() : Promise.resolve(null),
-    ]).then(([claimsRes, summaryRes]) => {
+      user.role === 'employee' ? reportsApi.employeeSummary() : Promise.resolve(null),
+    ]).then(([claimsRes, summaryRes, empRes]) => {
       setClaims(claimsRes.data);
       if (summaryRes) setSummary(summaryRes.data);
+      if (empRes) setEmployeeSummary(empRes.data);
     }).finally(() => setLoading(false));
   }, [user.role]);
 
@@ -286,6 +289,152 @@ export default function Dashboard() {
           </CardContent>
         </Card>
       </div>
+
+      {/* Employee spend overview */}
+      {user.role === 'employee' && employeeSummary && (
+        <div className="space-y-4">
+          {/* Stat row */}
+          <div className="grid grid-cols-3 gap-4">
+            <div className="bg-white border border-gray-200 rounded-lg px-5 py-4">
+              <p className="text-xs text-gray-500 font-medium uppercase tracking-wide">Approved (All-time)</p>
+              <p className="text-2xl font-semibold text-gray-900 mt-1 tabular-nums">{formatCurrency(employeeSummary.total_approved)}</p>
+            </div>
+            <div className="bg-white border border-gray-200 rounded-lg px-5 py-4">
+              <p className="text-xs text-gray-500 font-medium uppercase tracking-wide">Approved This Month</p>
+              <p className="text-2xl font-semibold text-gray-900 mt-1 tabular-nums">{formatCurrency(employeeSummary.total_this_month)}</p>
+            </div>
+            <div className="bg-white border border-gray-200 rounded-lg px-5 py-4">
+              <p className="text-xs text-gray-500 font-medium uppercase tracking-wide">Awaiting Approval</p>
+              <p className="text-2xl font-semibold text-amber-700 mt-1 tabular-nums">{formatCurrency(employeeSummary.total_pending)}</p>
+            </div>
+          </div>
+
+          {/* Area chart */}
+          <Card>
+            <CardHeader>
+              <div className="flex items-center justify-between">
+                <CardTitle>Spend Overview</CardTitle>
+                <span className="text-xs text-gray-400">Last 90 days — approved expenses only</span>
+              </div>
+            </CardHeader>
+            <CardContent>
+              {employeeSummary.daily_trend?.length > 0 ? (
+                <ResponsiveContainer width="100%" height={200}>
+                  <AreaChart
+                    data={employeeSummary.daily_trend}
+                    margin={{ top: 4, right: 0, left: -16, bottom: 0 }}
+                  >
+                    <defs>
+                      <linearGradient id="spendGradient" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="5%" stopColor="#CC1719" stopOpacity={0.15} />
+                        <stop offset="95%" stopColor="#CC1719" stopOpacity={0} />
+                      </linearGradient>
+                    </defs>
+                    <CartesianGrid strokeDasharray="2 4" stroke="#E5E7EB" vertical={false} />
+                    <XAxis
+                      dataKey="date"
+                      tick={{ fontSize: 11, fill: '#6B7280' }}
+                      axisLine={false}
+                      tickLine={false}
+                      tickFormatter={(d) => {
+                        const dt = new Date(d);
+                        return `${dt.getDate()} ${dt.toLocaleString('en-GB', { month: 'short' })}`;
+                      }}
+                      interval="preserveStartEnd"
+                    />
+                    <YAxis
+                      tick={{ fontSize: 11, fill: '#6B7280' }}
+                      axisLine={false}
+                      tickLine={false}
+                      tickFormatter={(v) => `£${v}`}
+                    />
+                    <Tooltip
+                      formatter={(v) => [formatCurrency(v), 'Spend']}
+                      labelFormatter={(d) => {
+                        const dt = new Date(d);
+                        return dt.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
+                      }}
+                      contentStyle={{
+                        fontSize: 12,
+                        border: '1px solid #E5E7EB',
+                        borderRadius: 4,
+                        boxShadow: '0 1px 4px rgba(0,0,0,0.08)',
+                      }}
+                    />
+                    <Area
+                      type="monotone"
+                      dataKey="amount"
+                      stroke="#CC1719"
+                      strokeWidth={2}
+                      fill="url(#spendGradient)"
+                      dot={false}
+                      activeDot={{ r: 4, fill: '#CC1719' }}
+                    />
+                  </AreaChart>
+                </ResponsiveContainer>
+              ) : (
+                <p className="text-sm text-gray-500 py-8 text-center">No approved spend in the last 90 days.</p>
+              )}
+            </CardContent>
+          </Card>
+
+          {/* Category breakdown + recent items */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+            <Card>
+              <CardHeader><CardTitle>By Category</CardTitle></CardHeader>
+              <CardContent>
+                {employeeSummary.by_category?.length > 0 ? (
+                  <div className="space-y-2.5">
+                    {employeeSummary.by_category.map((cat, i) => {
+                      const total = employeeSummary.by_category.reduce((s, c) => s + (parseFloat(c.amount) || 0), 0);
+                      const pct = total > 0 ? Math.round(((parseFloat(cat.amount) || 0) / total) * 100) : 0;
+                      return (
+                        <div key={cat.category} className="space-y-1">
+                          <div className="flex items-center justify-between text-xs">
+                            <span className="text-gray-700 font-medium capitalize">{cat.category || 'Other'}</span>
+                            <span className="text-gray-500 tabular-nums">{formatCurrency(cat.amount)}</span>
+                          </div>
+                          <div className="h-1.5 bg-gray-100 rounded-full overflow-hidden">
+                            <div
+                              className="h-full rounded-full"
+                              style={{ width: `${pct}%`, backgroundColor: CATEGORY_COLORS[i % CATEGORY_COLORS.length] }}
+                            />
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                ) : (
+                  <p className="text-sm text-gray-500 py-4 text-center">No category data yet.</p>
+                )}
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader><CardTitle>Recent Approved Expenses</CardTitle></CardHeader>
+              <CardContent className="p-0">
+                {employeeSummary.recent_items?.length > 0 ? (
+                  <div className="divide-y divide-gray-100">
+                    {employeeSummary.recent_items.map((item, i) => (
+                      <div key={i} className="flex items-center justify-between px-5 py-2.5">
+                        <div className="min-w-0 flex-1">
+                          <p className="text-sm font-medium text-gray-800 truncate">{item.supplier || item.claim_title}</p>
+                          <p className="text-xs text-gray-400 mt-0.5">
+                            {item.expense_type} · {new Date(item.date).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })}
+                          </p>
+                        </div>
+                        <span className="text-sm font-semibold text-gray-900 tabular-nums ml-4">{formatCurrency(item.amount)}</span>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="text-sm text-gray-500 py-4 text-center px-5">No approved expenses yet.</p>
+                )}
+              </CardContent>
+            </Card>
+          </div>
+        </div>
+      )}
 
       {/* Finance charts — managers and processors only */}
       {summary && (

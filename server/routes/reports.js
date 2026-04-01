@@ -85,4 +85,80 @@ router.get('/summary', allow('processor', 'admin', 'manager'), async (req, res) 
   });
 });
 
+// GET /api/reports/employee-summary — personal spend data for the logged-in user
+// Data only includes items from claims approved by the processor (status = processing or exported)
+router.get('/employee-summary', async (req, res) => {
+  const userId = req.user.id;
+
+  const approvedBase = db('claim_items')
+    .join('claims', 'claim_items.claim_id', 'claims.id')
+    .whereIn('claims.status', ['processing', 'exported'])
+    .where('claims.user_id', userId);
+
+  // Total approved (all-time)
+  const [totalRow] = await approvedBase.clone()
+    .sum({ total: db.raw('COALESCE(claim_items.amount, claim_items.reimbursement_amount, 0)') });
+
+  // Total approved this calendar month
+  const now = new Date();
+  const monthStart = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-01`;
+  const monthEnd = new Date(now.getFullYear(), now.getMonth() + 1, 0).toISOString().slice(0, 10);
+  const [monthRow] = await approvedBase.clone()
+    .whereBetween('claim_items.transaction_date', [monthStart, monthEnd])
+    .sum({ total: db.raw('COALESCE(claim_items.amount, claim_items.reimbursement_amount, 0)') });
+
+  // Total pending (in-flight claims not yet processor-approved)
+  const [pendingRow] = await db('claim_items')
+    .join('claims', 'claim_items.claim_id', 'claims.id')
+    .whereIn('claims.status', ['submitted', 'manager_review', 'auditing'])
+    .where('claims.user_id', userId)
+    .sum({ total: db.raw('COALESCE(claim_items.amount, claim_items.reimbursement_amount, 0)') });
+
+  // Daily trend — last 90 days
+  const ninetyDaysAgo = new Date();
+  ninetyDaysAgo.setDate(ninetyDaysAgo.getDate() - 90);
+  const cutoff = ninetyDaysAgo.toISOString().slice(0, 10);
+
+  const dailyTrend = await approvedBase.clone()
+    .where('claim_items.transaction_date', '>=', cutoff)
+    .groupBy('claim_items.transaction_date')
+    .select(
+      db.raw("TO_CHAR(claim_items.transaction_date, 'YYYY-MM-DD') as date"),
+      db.raw('SUM(COALESCE(claim_items.amount, claim_items.reimbursement_amount, 0)) as amount')
+    )
+    .orderBy('date', 'asc');
+
+  // By category
+  const byCategory = await approvedBase.clone()
+    .groupBy('claim_items.expense_type', 'claim_items.type')
+    .select(
+      db.raw("COALESCE(claim_items.expense_type, claim_items.type) as category"),
+      db.raw('SUM(COALESCE(claim_items.amount, claim_items.reimbursement_amount, 0)) as amount')
+    )
+    .orderBy('amount', 'desc')
+    .limit(5);
+
+  // Recent approved items
+  const recentItems = await approvedBase.clone()
+    .join('claims as c2', 'claim_items.claim_id', 'c2.id')
+    .select(
+      db.raw("TO_CHAR(claim_items.transaction_date, 'YYYY-MM-DD') as date"),
+      'claim_items.supplier',
+      db.raw("COALESCE(claim_items.expense_type, claim_items.type) as expense_type"),
+      db.raw('COALESCE(claim_items.amount, claim_items.reimbursement_amount, 0) as amount'),
+      'c2.title as claim_title'
+    )
+    .orderBy('claim_items.transaction_date', 'desc')
+    .limit(10);
+
+  res.json({
+    total_approved: parseFloat(totalRow.total || 0),
+    total_this_month: parseFloat(monthRow.total || 0),
+    total_pending: parseFloat(pendingRow.total || 0),
+    daily_trend: dailyTrend,
+    by_category: byCategory,
+    recent_items: recentItems,
+  });
+});
+
 module.exports = router;

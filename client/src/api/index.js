@@ -79,6 +79,7 @@ export const batchesApi = {
 // Reports
 export const reportsApi = {
   summary: (month) => api.get('/reports/summary', { params: month ? { month } : {} }),
+  employeeSummary: () => api.get('/reports/employee-summary'),
 };
 
 // Mileage

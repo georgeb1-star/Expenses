@@ -64,9 +64,31 @@ router.put('/:itemId', async (req, res, next) => {
     const item = await db('claim_items').where({ id: req.params.itemId, claim_id: claim.id }).first();
     if (!item) return res.status(404).json({ error: 'Item not found' });
 
-    const updates = { ...req.body };
-    delete updates.id;
-    delete updates.claim_id;
+    // Explicit field whitelist — prevents overwriting id, claim_id, reimbursement_amount, timestamps etc.
+    const {
+      type, expense_type, supplier, transaction_date, amount, vat, currency,
+      payment_type, business_purpose, department, billable, client_name,
+      from_location, to_location, vehicle_type, distance, passengers,
+    } = req.body;
+    const updates = {
+      ...(type !== undefined && { type }),
+      ...(expense_type !== undefined && { expense_type }),
+      ...(supplier !== undefined && { supplier }),
+      ...(transaction_date !== undefined && { transaction_date }),
+      ...(amount !== undefined && { amount }),
+      ...(vat !== undefined && { vat }),
+      ...(currency !== undefined && { currency }),
+      ...(payment_type !== undefined && { payment_type }),
+      ...(business_purpose !== undefined && { business_purpose }),
+      ...(department !== undefined && { department }),
+      ...(billable !== undefined && { billable }),
+      ...(client_name !== undefined && { client_name }),
+      ...(from_location !== undefined && { from_location }),
+      ...(to_location !== undefined && { to_location }),
+      ...(vehicle_type !== undefined && { vehicle_type }),
+      ...(distance !== undefined && { distance }),
+      ...(passengers !== undefined && { passengers }),
+    };
 
     // Coerce empty strings to proper types for numeric columns
     if (updates.amount === '') updates.amount = 0;

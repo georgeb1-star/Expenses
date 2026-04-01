@@ -132,30 +132,36 @@ router.get('/:id', async (req, res) => {
 });
 
 // PUT /api/claims/:id
-router.put('/:id', async (req, res) => {
-  const claim = await db('claims').where({ id: req.params.id }).first();
-  if (!claim) return res.status(404).json({ error: 'Claim not found' });
-  if (claim.user_id !== req.user.id) return res.status(403).json({ error: 'Forbidden' });
-  if (claim.status !== 'draft') return res.status(422).json({ error: 'Only draft claims can be edited' });
+router.put('/:id', async (req, res, next) => {
+  try {
+    const claim = await db('claims').where({ id: req.params.id }).first();
+    if (!claim) return res.status(404).json({ error: 'Claim not found' });
+    if (claim.user_id !== req.user.id) return res.status(403).json({ error: 'Forbidden' });
+    if (claim.status !== 'draft') return res.status(422).json({ error: 'Only draft claims can be edited' });
 
-  const { title } = req.body;
-  const [updated] = await db('claims').where({ id: req.params.id }).update({ title, updated_at: db.fn.now() }).returning('*');
-  res.json(updated);
+    const { title } = req.body;
+    if (title && title.length > 200) return res.status(400).json({ error: 'title too long (max 200 characters)' });
+    const [updated] = await db('claims').where({ id: req.params.id }).update({ title, updated_at: db.fn.now() }).returning('*');
+    res.json(updated);
+  } catch (err) { next(err); }
 });
 
 // DELETE /api/claims/:id
-router.delete('/:id', async (req, res) => {
-  const claim = await db('claims').where({ id: req.params.id }).first();
-  if (!claim) return res.status(404).json({ error: 'Claim not found' });
-  if (claim.user_id !== req.user.id) return res.status(403).json({ error: 'Forbidden' });
-  if (claim.status !== 'draft') return res.status(422).json({ error: 'Only draft claims can be deleted' });
+router.delete('/:id', async (req, res, next) => {
+  try {
+    const claim = await db('claims').where({ id: req.params.id }).first();
+    if (!claim) return res.status(404).json({ error: 'Claim not found' });
+    if (claim.user_id !== req.user.id) return res.status(403).json({ error: 'Forbidden' });
+    if (claim.status !== 'draft') return res.status(422).json({ error: 'Only draft claims can be deleted' });
 
-  await db('claims').where({ id: req.params.id }).delete();
-  res.status(204).end();
+    await db('claims').where({ id: req.params.id }).delete();
+    res.status(204).end();
+  } catch (err) { next(err); }
 });
 
 // POST /api/claims/:id/submit
-router.post('/:id/submit', async (req, res) => {
+router.post('/:id/submit', async (req, res, next) => {
+  try {
   const claim = await db('claims').where({ id: req.params.id }).first();
   if (!claim) return res.status(404).json({ error: 'Claim not found' });
   if (claim.user_id !== req.user.id) return res.status(403).json({ error: 'Forbidden' });
@@ -209,10 +215,11 @@ router.post('/:id/submit', async (req, res) => {
       employeeName: req.user.name,
       claimTitle: claim.title,
       claimId: claim.id,
-    });
+    }).catch(() => {});
   }
 
   res.json(updated);
+  } catch (err) { next(err); }
 });
 
 // POST /api/claims/:id/approve  (manager)
@@ -236,7 +243,7 @@ router.post('/:id/approve', async (req, res) => {
         claimTitle: claim.title,
         claimId: claim.id,
         managerName: req.user.name,
-      });
+      }).catch(() => {});
     }
     res.json(updated);
   } catch (err) {
@@ -267,7 +274,7 @@ router.post('/:id/reject', async (req, res) => {
         claimId: claim.id,
         managerName: req.user.name,
         comment,
-      });
+      }).catch(() => {});
     }
     res.json(updated);
   } catch (err) {

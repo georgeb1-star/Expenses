@@ -26,6 +26,8 @@ router.post('/', async (req, res, next) => {
     if (!type || !transaction_date) {
       return res.status(400).json({ error: 'type and transaction_date are required' });
     }
+    if (supplier && supplier.length > 200) return res.status(400).json({ error: 'supplier too long (max 200 characters)' });
+    if (business_purpose && business_purpose.length > 1000) return res.status(400).json({ error: 'business_purpose too long (max 1000 characters)' });
 
     let reimbursement_amount = null;
     if (type === 'mileage') {

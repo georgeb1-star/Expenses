@@ -30,6 +30,7 @@ router.post('/', allow('processor', 'admin'), async (req, res) => {
   if (!name || !claim_ids?.length) {
     return res.status(400).json({ error: 'name and claim_ids are required' });
   }
+  if (name.length > 100) return res.status(400).json({ error: 'name too long (max 100 characters)' });
 
   // Verify all claims have passed audit (processing status)
   const claims = await db('claims').whereIn('id', claim_ids);

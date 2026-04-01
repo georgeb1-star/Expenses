@@ -52,6 +52,7 @@ router.get('/', async (req, res) => {
 router.post('/', async (req, res) => {
   const { title, template_id } = req.body;
   if (!title) return res.status(400).json({ error: 'title is required' });
+  if (title.length > 200) return res.status(400).json({ error: 'title too long (max 200 characters)' });
 
   const [claim] = await db('claims')
     .insert({ user_id: req.user.id, title, status: 'draft' })
@@ -68,6 +69,12 @@ router.post('/', async (req, res) => {
       const today = new Date().toISOString().slice(0, 10);
       for (const item of items) {
         const { id, claim_id, transaction_date, reimbursement_amount, receipts, created_at, updated_at, ...fields } = item;
+        if (!['expense', 'mileage'].includes(fields.type)) continue;
+        if (fields.amount !== undefined) fields.amount = Math.max(0, Number(fields.amount) || 0);
+        if (fields.vat !== undefined) fields.vat = Math.max(0, Number(fields.vat) || 0);
+        if (fields.distance !== undefined) fields.distance = fields.distance ? Math.max(0, Number(fields.distance) || 0) : null;
+        if (fields.supplier && fields.supplier.length > 200) fields.supplier = fields.supplier.slice(0, 200);
+        if (fields.business_purpose && fields.business_purpose.length > 1000) fields.business_purpose = fields.business_purpose.slice(0, 1000);
         await db('claim_items').insert({ ...fields, claim_id: claim.id, transaction_date: today });
       }
     }
@@ -215,6 +222,7 @@ router.post('/:id/approve', async (req, res) => {
   try {
     const claim = await db('claims').where({ id: req.params.id }).first();
     if (!claim) return res.status(404).json({ error: 'Claim not found' });
+    if (req.user.role === 'manager' && claim.manager_id !== req.user.id) return res.status(403).json({ error: 'Forbidden' });
 
     const updated = await transition(claim.id, 'approve', req.user.id, { comment });
     if (comment) await db('comments').insert({ claim_id: claim.id, user_id: req.user.id, message: comment });
@@ -244,6 +252,7 @@ router.post('/:id/reject', async (req, res) => {
   try {
     const claim = await db('claims').where({ id: req.params.id }).first();
     if (!claim) return res.status(404).json({ error: 'Claim not found' });
+    if (req.user.role === 'manager' && claim.manager_id !== req.user.id) return res.status(403).json({ error: 'Forbidden' });
 
     const updated = await transition(claim.id, 'reject', req.user.id, { comment });
     await db('comments').insert({ claim_id: claim.id, user_id: req.user.id, message: comment });

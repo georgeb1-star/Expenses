@@ -23,16 +23,27 @@ router.get('/managers', async (req, res) => {
 
 // POST /api/auth/register
 router.post('/register', async (req, res) => {
-  const { name, email, password, role = 'employee', department, employee_id, manager_id } = req.body;
+  const { name, email, password, department, employee_id, manager_id } = req.body;
   if (!name || !email || !password) {
     return res.status(400).json({ error: 'name, email and password are required' });
   }
+  if (name.length > 100) return res.status(400).json({ error: 'name too long' });
+  if (email.length > 200) return res.status(400).json({ error: 'email too long' });
+
   const existing = await db('users').where({ email }).first();
   if (existing) return res.status(409).json({ error: 'Email already registered' });
 
+  // Roles are assigned by admins — self-registration always creates an employee
+  const role = 'employee';
+
+  if (manager_id) {
+    const mgr = await db('users').where({ id: manager_id }).whereIn('role', ['manager', 'admin']).first();
+    if (!mgr) return res.status(400).json({ error: 'Invalid manager selected' });
+  }
+
   const password_hash = await bcrypt.hash(password, 10);
   const [user] = await db('users')
-    .insert({ name, email, password_hash, role, department, employee_id, manager_id })
+    .insert({ name, email, password_hash, role, department, employee_id, manager_id: manager_id || null })
     .returning(['id', 'name', 'email', 'role', 'department', 'employee_id', 'manager_id']);
 
   res.status(201).json({ token: signToken(user), user });
@@ -67,9 +78,18 @@ router.get('/me', authenticate, async (req, res) => {
 router.patch('/me', authenticate, async (req, res) => {
   const { name, department, manager_id } = req.body;
   const updates = {};
-  if (name !== undefined) updates.name = name;
+  if (name !== undefined) {
+    if (name.length > 100) return res.status(400).json({ error: 'name too long' });
+    updates.name = name;
+  }
   if (department !== undefined) updates.department = department;
-  if (manager_id !== undefined) updates.manager_id = manager_id || null;
+  if (manager_id !== undefined) {
+    if (manager_id) {
+      const mgr = await db('users').where({ id: manager_id }).whereIn('role', ['manager', 'admin']).first();
+      if (!mgr) return res.status(400).json({ error: 'Invalid manager selected' });
+    }
+    updates.manager_id = manager_id || null;
+  }
 
   const [user] = await db('users')
     .where({ id: req.user.id })

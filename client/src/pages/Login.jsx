@@ -31,12 +31,7 @@ export default function Login() {
       {/* Brand panel */}
       <div className="bg-red-800 md:w-[420px] md:flex-shrink-0 flex flex-col items-center justify-center px-10 py-12 md:py-0">
         <div className="flex flex-col items-center text-center">
-          <img
-            src="/citipost-logo.png"
-            alt="Citipost"
-            className="h-14 w-auto mb-8"
-            draggable={false}
-          />
+          <p className="text-3xl font-bold tracking-tight text-white mb-6">CITIPOST</p>
           <div className="w-10 h-px bg-white/30 mb-6" />
           <h1 className="text-2xl font-semibold text-white leading-snug mb-3">
             Expense Management
@@ -61,6 +56,12 @@ export default function Login() {
       <div className="flex-1 flex items-center justify-center bg-gray-50 px-6 py-12">
         <div className="w-full max-w-sm">
           <div className="mb-8">
+            <img
+              src="/citipost-logo.png"
+              alt="Citipost"
+              className="h-10 w-auto mb-6"
+              draggable={false}
+            />
             <h2 className="text-xl font-semibold text-gray-900 mb-1">Sign in to your account</h2>
             <p className="text-sm text-gray-500">Enter your Citipost credentials to continue</p>
           </div>

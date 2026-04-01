@@ -28,12 +28,12 @@ export default function Dashboard() {
 
   useEffect(() => {
     Promise.all([
-      claimsApi.list(),
+      claimsApi.listAll(),
       ['processor', 'admin'].includes(user.role) ? reportsApi.summary() : Promise.resolve(null),
       user.role === 'employee' ? reportsApi.employeeSummary() : Promise.resolve(null),
       ['manager', 'admin'].includes(user.role) ? reportsApi.teamSummary() : Promise.resolve(null),
     ]).then(([claimsRes, summaryRes, empRes, teamRes]) => {
-      setClaims(claimsRes.data);
+      setClaims(claimsRes.data.data);
       if (summaryRes) setSummary(summaryRes.data);
       if (empRes) setEmployeeSummary(empRes.data);
       if (teamRes) setTeamSummary(teamRes.data);

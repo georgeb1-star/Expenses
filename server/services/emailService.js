@@ -59,6 +59,18 @@ module.exports = {
     );
   },
 
+  async sendPasswordReset({ email, name, resetLink }) {
+    await sendEmail(
+      email,
+      'Reset your ExpenseFlow password',
+      `<p>Hi ${name},</p>
+       <p>We received a request to reset your password. Click the link below — it expires in 1 hour.</p>
+       <p><a href="${resetLink}" style="background:#CC1719;color:#fff;padding:10px 20px;border-radius:6px;text-decoration:none;display:inline-block">Reset password →</a></p>
+       <p>If you didn't request this, you can safely ignore this email.</p>
+       <p style="color:#888;font-size:12px">ExpenseFlow · Citipost</p>`
+    );
+  },
+
   async auditRejected({ employeeEmail, employeeName, managerEmail, managerName, claimTitle, claimId, comment }) {
     await sendEmail(
       managerEmail,

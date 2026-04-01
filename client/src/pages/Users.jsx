@@ -5,7 +5,7 @@ import api from '../api/client';
 import { Button } from '../components/ui/Button';
 import { Input } from '../components/ui/Input';
 import { formatDate } from '../lib/utils';
-import { Plus, Search, X, Eye, EyeOff, UserCog } from 'lucide-react';
+import { Plus, Search, X, Eye, EyeOff, UserCog, ChevronLeft, ChevronRight } from 'lucide-react';
 
 const ROLES = ['employee', 'manager', 'processor', 'admin'];
 
@@ -182,9 +182,14 @@ function UserModal({ user, managers, onClose, onSaved }) {
   );
 }
 
+const PAGE_SIZE = 25;
+
 export default function Users() {
   const { user: currentUser } = useAuth();
   const [users, setUsers] = useState([]);
+  const [total, setTotal] = useState(0);
+  const [pages, setPages] = useState(1);
+  const [page, setPage] = useState(1);
   const [managers, setManagers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
@@ -193,23 +198,26 @@ export default function Users() {
   const [editingUser, setEditingUser] = useState(null);
   const [deleteError, setDeleteError] = useState('');
 
-  const fetchUsers = async () => {
-    const params = {};
+  const fetchUsers = async (p = page) => {
+    const params = { page: p, limit: PAGE_SIZE };
     if (search) params.search = search;
     if (roleFilter) params.role = roleFilter;
     const res = await usersApi.list(params);
-    setUsers(res.data);
+    setUsers(res.data.data);
+    setTotal(res.data.total);
+    setPages(res.data.pages);
   };
 
   useEffect(() => {
     Promise.all([
-      fetchUsers(),
+      fetchUsers(1),
       api.get('/auth/managers').then((r) => setManagers(r.data)).catch(() => {}),
     ]).finally(() => setLoading(false));
   }, []);
 
   useEffect(() => {
-    fetchUsers();
+    setPage(1);
+    fetchUsers(1);
   }, [search, roleFilter]);
 
   const handleSaved = () => {
@@ -255,7 +263,7 @@ export default function Users() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-xl font-semibold text-gray-900">User Management</h1>
-          <p className="text-sm text-gray-500 mt-0.5">{users.length} user{users.length !== 1 ? 's' : ''}</p>
+          <p className="text-sm text-gray-500 mt-0.5">{total} user{total !== 1 ? 's' : ''}</p>
         </div>
         <Button size="sm" onClick={openCreate}>
           <Plus className="w-4 h-4 mr-1.5" />
@@ -359,6 +367,29 @@ export default function Users() {
           </table>
         </div>
       </div>
+
+      {/* Pagination */}
+      {pages > 1 && (
+        <div className="flex items-center justify-between pt-2">
+          <p className="text-xs text-gray-500">Page {page} of {pages} · {total} total</p>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => { const p = page - 1; setPage(p); fetchUsers(p); }}
+              disabled={page === 1}
+              className="flex items-center gap-1 px-3 py-1.5 text-xs font-medium rounded-lg border border-gray-200 bg-white text-gray-600 hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed"
+            >
+              <ChevronLeft className="w-3.5 h-3.5" /> Previous
+            </button>
+            <button
+              onClick={() => { const p = page + 1; setPage(p); fetchUsers(p); }}
+              disabled={page === pages}
+              className="flex items-center gap-1 px-3 py-1.5 text-xs font-medium rounded-lg border border-gray-200 bg-white text-gray-600 hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed"
+            >
+              Next <ChevronRight className="w-3.5 h-3.5" />
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

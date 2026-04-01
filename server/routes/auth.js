@@ -1,8 +1,10 @@
 const router = require('express').Router();
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
+const crypto = require('crypto');
 const db = require('../db/connection');
 const authenticate = require('../middleware/auth');
+const emailService = require('../services/emailService');
 
 function signToken(user) {
   return jwt.sign(
@@ -96,6 +98,51 @@ router.patch('/me', authenticate, async (req, res) => {
     .update({ ...updates, updated_at: db.fn.now() })
     .returning(['id', 'name', 'email', 'role', 'department', 'employee_id', 'manager_id']);
   res.json(user);
+});
+
+// POST /api/auth/forgot-password
+router.post('/forgot-password', async (req, res) => {
+  const { email } = req.body;
+  if (!email) return res.status(400).json({ error: 'Email is required' });
+
+  // Always respond 200 to prevent user enumeration
+  const user = await db('users').where({ email }).first();
+  if (!user) return res.json({ message: 'If that email exists, a reset link has been sent.' });
+
+  const token = crypto.randomBytes(32).toString('hex');
+  const expires = new Date(Date.now() + 60 * 60 * 1000); // 1 hour
+
+  await db('users').where({ id: user.id }).update({ reset_token: token, reset_token_expires: expires });
+
+  const base = process.env.APP_URL || 'https://expenseflow.vercel.app';
+  const resetLink = `${base}/reset-password?token=${token}`;
+
+  await emailService.sendPasswordReset({ email: user.email, name: user.name, resetLink }).catch(() => {});
+
+  res.json({ message: 'If that email exists, a reset link has been sent.' });
+});
+
+// POST /api/auth/reset-password
+router.post('/reset-password', async (req, res) => {
+  const { token, password } = req.body;
+  if (!token || !password) return res.status(400).json({ error: 'Token and password are required' });
+  if (password.length < 8) return res.status(400).json({ error: 'Password must be at least 8 characters' });
+
+  const user = await db('users')
+    .where('reset_token', token)
+    .where('reset_token_expires', '>', new Date())
+    .first();
+
+  if (!user) return res.status(400).json({ error: 'Reset link is invalid or has expired.' });
+
+  const password_hash = await bcrypt.hash(password, 10);
+  await db('users').where({ id: user.id }).update({
+    password_hash,
+    reset_token: null,
+    reset_token_expires: null,
+  });
+
+  res.json({ message: 'Password updated successfully.' });
 });
 
 module.exports = router;

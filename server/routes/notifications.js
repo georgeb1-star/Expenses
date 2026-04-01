@@ -6,11 +6,17 @@ router.use(authenticate);
 
 // GET /api/notifications
 router.get('/', async (req, res) => {
+  const page = Math.max(1, parseInt(req.query.page) || 1);
+  const limit = Math.min(100, parseInt(req.query.limit) || 25);
+
+  const [{ total }] = await db('notifications').where({ user_id: req.user.id }).count('id as total');
   const notifications = await db('notifications')
     .where({ user_id: req.user.id })
     .orderBy('created_at', 'desc')
-    .limit(50);
-  res.json(notifications);
+    .offset((page - 1) * limit)
+    .limit(limit);
+
+  res.json({ data: notifications, total: Number(total), page, pages: Math.ceil(Number(total) / limit) });
 });
 
 // PUT /api/notifications/:id/read

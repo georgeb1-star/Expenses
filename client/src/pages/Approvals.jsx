@@ -26,8 +26,8 @@ export default function Approvals() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    claimsApi.list().then((r) => {
-      setClaims(r.data.filter((c) => ['submitted', 'manager_review'].includes(c.status)));
+    claimsApi.listAll().then((r) => {
+      setClaims(r.data.data.filter((c) => ['submitted', 'manager_review'].includes(c.status)));
     }).finally(() => setLoading(false));
   }, []);
 

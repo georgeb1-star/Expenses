@@ -9,7 +9,8 @@ export const authApi = {
 
 // Claims
 export const claimsApi = {
-  list: () => api.get('/claims'),
+  list: (params) => api.get('/claims', { params }),
+  listAll: (params) => api.get('/claims', { params: { limit: 500, ...params } }),
   get: (id) => api.get(`/claims/${id}`),
   create: (data) => api.post('/claims', data),
   update: (id, data) => api.put(`/claims/${id}`, data),

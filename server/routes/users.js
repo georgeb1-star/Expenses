@@ -11,6 +11,8 @@ const VALID_ROLES = ['employee', 'manager', 'processor', 'admin'];
 // GET /api/users
 router.get('/', async (req, res) => {
   const { search, role, department } = req.query;
+  const page = Math.max(1, parseInt(req.query.page) || 1);
+  const limit = Math.min(100, parseInt(req.query.limit) || 25);
 
   let q = db('users')
     .leftJoin('users as mgr', 'users.manager_id', 'mgr.id')
@@ -30,8 +32,9 @@ router.get('/', async (req, res) => {
   if (role) q = q.where('users.role', role);
   if (department) q = q.whereILike('users.department', `%${department}%`);
 
-  const users = await q;
-  res.json(users);
+  const [{ total }] = await q.clone().clearSelect().clearOrder().count('users.id as total');
+  const users = await q.offset((page - 1) * limit).limit(limit);
+  res.json({ data: users, total: Number(total), page, pages: Math.ceil(Number(total) / limit) });
 });
 
 // POST /api/users

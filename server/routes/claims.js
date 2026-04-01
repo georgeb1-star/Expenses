@@ -7,9 +7,13 @@ const emailService = require('../services/emailService');
 
 router.use(authenticate);
 
-// GET /api/claims — filtered by role
+// GET /api/claims — filtered by role, paginated
 router.get('/', async (req, res) => {
   const { role, id: userId } = req.user;
+  const page = Math.max(1, parseInt(req.query.page) || 1);
+  const limit = Math.min(100, Math.max(1, parseInt(req.query.limit) || 25));
+  const { search, status } = req.query;
+
   let query = db('claims')
     .join('users as owner', 'claims.user_id', 'owner.id')
     .select(
@@ -26,23 +30,37 @@ router.get('/', async (req, res) => {
     query = query.where((q) => {
       q.where('claims.manager_id', userId)
         .orWhereIn('claims.user_id', [...team, userId])
-        // Unassigned submitted claims are visible to all managers so nothing gets stuck
         .orWhereIn('claims.status', ['submitted', 'manager_review']);
     });
   }
   // processor / admin see all
 
-  const claims = await query;
+  if (status) query = query.where('claims.status', status);
+  if (search) {
+    query = query.where((q) => {
+      q.whereILike('claims.title', `%${search}%`)
+        .orWhereILike('owner.name', `%${search}%`);
+    });
+  }
 
-  // Attach alert counts
+  // Get total count before pagination
+  const countQuery = query.clone().clearSelect().clearOrder().count('claims.id as total').first();
+  const { total } = await countQuery;
+
+  const claims = await query.offset((page - 1) * limit).limit(limit);
+
+  // Attach alert counts and item totals
   const claimIds = claims.map((c) => c.id);
+  if (claimIds.length === 0) {
+    return res.json({ data: [], total: Number(total), page, pages: Math.ceil(Number(total) / limit) });
+  }
+
   const alertCounts = await db('alerts')
     .whereIn('claim_id', claimIds)
     .where({ resolved: false })
     .groupBy('claim_id')
     .select('claim_id', db.raw('count(*) as count'));
 
-  // Attach item totals
   const itemTotals = await db('claim_items')
     .whereIn('claim_id', claimIds)
     .groupBy('claim_id')
@@ -56,7 +74,7 @@ router.get('/', async (req, res) => {
     total_amount: totalMap[c.id] || 0,
   }));
 
-  res.json(result);
+  res.json({ data: result, total: Number(total), page, pages: Math.ceil(Number(total) / limit) });
 });
 
 // POST /api/claims

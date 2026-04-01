@@ -294,18 +294,18 @@ export default function Dashboard() {
       {user.role === 'employee' && employeeSummary && (
         <div className="space-y-4">
           {/* Stat row */}
-          <div className="grid grid-cols-3 gap-4">
-            <div className="bg-white border border-gray-200 rounded-lg px-5 py-4">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+            <div className="bg-white border border-gray-200 rounded-lg px-4 py-3 sm:px-5 sm:py-4">
               <p className="text-xs text-gray-500 font-medium uppercase tracking-wide">Approved (All-time)</p>
-              <p className="text-2xl font-semibold text-gray-900 mt-1 tabular-nums">{formatCurrency(employeeSummary.total_approved)}</p>
+              <p className="text-xl sm:text-2xl font-semibold text-gray-900 mt-1 tabular-nums">{formatCurrency(employeeSummary.total_approved)}</p>
             </div>
-            <div className="bg-white border border-gray-200 rounded-lg px-5 py-4">
+            <div className="bg-white border border-gray-200 rounded-lg px-4 py-3 sm:px-5 sm:py-4">
               <p className="text-xs text-gray-500 font-medium uppercase tracking-wide">Approved This Month</p>
-              <p className="text-2xl font-semibold text-gray-900 mt-1 tabular-nums">{formatCurrency(employeeSummary.total_this_month)}</p>
+              <p className="text-xl sm:text-2xl font-semibold text-gray-900 mt-1 tabular-nums">{formatCurrency(employeeSummary.total_this_month)}</p>
             </div>
-            <div className="bg-white border border-gray-200 rounded-lg px-5 py-4">
+            <div className="bg-white border border-gray-200 rounded-lg px-4 py-3 sm:px-5 sm:py-4">
               <p className="text-xs text-gray-500 font-medium uppercase tracking-wide">Awaiting Approval</p>
-              <p className="text-2xl font-semibold text-amber-700 mt-1 tabular-nums">{formatCurrency(employeeSummary.total_pending)}</p>
+              <p className="text-xl sm:text-2xl font-semibold text-amber-700 mt-1 tabular-nums">{formatCurrency(employeeSummary.total_pending)}</p>
             </div>
           </div>
 
@@ -319,10 +319,10 @@ export default function Dashboard() {
             </CardHeader>
             <CardContent>
               {employeeSummary.daily_trend?.length > 0 ? (
-                <ResponsiveContainer width="100%" height={200}>
+                <ResponsiveContainer width="100%" height={180}>
                   <AreaChart
                     data={employeeSummary.daily_trend}
-                    margin={{ top: 4, right: 0, left: -16, bottom: 0 }}
+                    margin={{ top: 4, right: 4, left: -10, bottom: 0 }}
                   >
                     <defs>
                       <linearGradient id="spendGradient" x1="0" y1="0" x2="0" y2="1">

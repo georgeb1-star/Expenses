@@ -42,14 +42,14 @@ export function Layout({ children }) {
   return (
     <div className="flex h-screen bg-gray-50">
       {/* Sidebar */}
-      <aside className="w-60 bg-white border-r border-gray-200 flex flex-col flex-shrink-0">
+      <aside className="w-60 bg-gray-950 flex flex-col flex-shrink-0">
         {/* Brand */}
-        <div className="h-14 flex items-center px-5 border-b border-gray-200">
+        <div className="h-14 flex items-center px-5 border-b border-white/10">
           <div className="flex items-center gap-2.5">
-            <div className="w-6 h-6 rounded bg-red-700 flex items-center justify-center flex-shrink-0">
-              <ReceiptText className="w-3.5 h-3.5 text-white" />
+            <div className="w-7 h-7 rounded-lg bg-red-700 flex items-center justify-center flex-shrink-0">
+              <ReceiptText className="w-4 h-4 text-white" />
             </div>
-            <span className="text-sm font-semibold text-gray-900 tracking-tight">ExpenseFlow</span>
+            <span className="text-sm font-semibold text-white tracking-tight">ExpenseFlow</span>
           </div>
         </div>
 
@@ -62,10 +62,10 @@ export function Layout({ children }) {
                 to={to}
                 className={({ isActive }) =>
                   cn(
-                    'flex items-center gap-2.5 px-3 py-2 rounded text-sm transition-colors',
+                    'flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm transition-colors',
                     isActive
-                      ? 'bg-red-50 text-red-700 font-medium'
-                      : 'text-gray-600 font-normal hover:bg-gray-100 hover:text-gray-900'
+                      ? 'bg-white/10 text-white font-medium'
+                      : 'text-gray-400 font-normal hover:bg-white/5 hover:text-gray-200'
                   )
                 }
               >
@@ -76,22 +76,22 @@ export function Layout({ children }) {
           </div>
 
           {/* Secondary navigation */}
-          <div className="mt-6 pt-4 border-t border-gray-100 space-y-0.5">
+          <div className="mt-6 pt-4 border-t border-white/10 space-y-0.5">
             <NavLink
               to="/notifications"
               className={({ isActive }) =>
                 cn(
-                  'flex items-center gap-2.5 px-3 py-2 rounded text-sm transition-colors w-full',
+                  'flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm transition-colors w-full',
                   isActive
-                    ? 'bg-red-50 text-red-700 font-medium'
-                    : 'text-gray-600 font-normal hover:bg-gray-100 hover:text-gray-900'
+                    ? 'bg-white/10 text-white font-medium'
+                    : 'text-gray-400 font-normal hover:bg-white/5 hover:text-gray-200'
                 )
               }
             >
               <Bell className="w-4 h-4 flex-shrink-0" />
               <span className="flex-1">Notifications</span>
               {unread > 0 && (
-                <span className="bg-red-700 text-white text-[10px] font-semibold rounded px-1.5 py-0.5 leading-none">
+                <span className="bg-red-700 text-white text-[10px] font-semibold rounded-full px-1.5 py-0.5 leading-none">
                   {unread}
                 </span>
               )}
@@ -100,29 +100,29 @@ export function Layout({ children }) {
         </nav>
 
         {/* User footer */}
-        <div className="border-t border-gray-200 p-3">
+        <div className="border-t border-white/10 p-3">
           <NavLink
             to="/profile"
             className={({ isActive }) =>
-              cn('flex items-center gap-2 px-3 py-1.5 rounded text-xs mb-1 transition-colors',
-                isActive ? 'bg-red-50 text-red-700 font-medium' : 'text-gray-500 hover:bg-gray-100 hover:text-gray-700')
+              cn('flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs mb-1 transition-colors',
+                isActive ? 'bg-white/10 text-white font-medium' : 'text-gray-400 hover:bg-white/5 hover:text-gray-200')
             }
           >
             <UserCog className="w-3.5 h-3.5 flex-shrink-0" />
             Profile &amp; Settings
           </NavLink>
-          <div className="flex items-center gap-2.5 px-2 py-2 rounded hover:bg-gray-50 group">
-            <div className="w-7 h-7 rounded-full bg-red-100 flex items-center justify-center flex-shrink-0">
-              <span className="text-[10px] font-semibold text-red-700">{initials}</span>
+          <div className="flex items-center gap-2.5 px-2 py-2 rounded-lg hover:bg-white/5 group">
+            <div className="w-7 h-7 rounded-full bg-red-900 flex items-center justify-center flex-shrink-0">
+              <span className="text-[10px] font-semibold text-red-300">{initials}</span>
             </div>
             <div className="flex-1 min-w-0">
-              <p className="text-xs font-medium text-gray-900 truncate">{user?.name}</p>
+              <p className="text-xs font-medium text-gray-200 truncate">{user?.name}</p>
               <p className="text-[11px] text-gray-500 truncate">{ROLE_LABELS[user?.role] || user?.role}</p>
             </div>
             <button
               onClick={handleLogout}
               title="Sign out"
-              className="text-gray-400 hover:text-gray-700 transition-colors p-1 rounded"
+              className="text-gray-500 hover:text-gray-300 transition-colors p-1 rounded"
             >
               <LogOut className="w-3.5 h-3.5" />
             </button>
@@ -131,7 +131,7 @@ export function Layout({ children }) {
       </aside>
 
       {/* Main content */}
-      <main className="flex-1 overflow-auto">
+      <main className="flex-1 overflow-auto bg-gray-50">
         <div className="max-w-screen-xl mx-auto p-8">
           {children}
         </div>

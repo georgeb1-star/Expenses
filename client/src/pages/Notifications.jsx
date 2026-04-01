@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 import { notificationsApi } from '../api';
 import { Button } from '../components/ui/Button';
 import { formatDate } from '../lib/utils';
-import { ArrowRight } from 'lucide-react';
+import { ArrowRight, Bell } from 'lucide-react';
 
 export default function Notifications() {
   const [notifications, setNotifications] = useState([]);
@@ -47,11 +47,15 @@ export default function Notifications() {
           <div className="animate-spin rounded-full h-6 w-6 border-2 border-gray-300 border-t-red-700" />
         </div>
       ) : notifications.length === 0 ? (
-        <div className="flex flex-col items-center justify-center py-16 text-center border border-gray-200 rounded bg-white">
+        <div className="flex flex-col items-center justify-center py-16 text-center bg-white border border-gray-200 rounded-xl">
+          <div className="w-12 h-12 rounded-full bg-gray-100 flex items-center justify-center mb-4">
+            <Bell className="w-6 h-6 text-gray-400" />
+          </div>
           <p className="text-sm font-medium text-gray-700">No notifications yet.</p>
+          <p className="text-sm text-gray-500 mt-1">You'll be notified when claims are submitted, approved, or updated.</p>
         </div>
       ) : (
-        <div className="border border-gray-200 rounded bg-white overflow-hidden divide-y divide-gray-100">
+        <div className="border border-gray-200 rounded-xl bg-white overflow-hidden divide-y divide-gray-100">
           {notifications.map((n) => (
             <div
               key={n.id}

@@ -53,16 +53,19 @@ export default function Batches() {
           <div className="animate-spin rounded-full h-6 w-6 border-2 border-gray-300 border-t-red-700" />
         </div>
       ) : batches.length === 0 ? (
-        <div className="flex flex-col items-center justify-center py-16 text-center border border-gray-200 rounded bg-white">
+        <div className="flex flex-col items-center justify-center py-16 text-center bg-white border border-gray-200 rounded-xl">
+          <div className="w-12 h-12 rounded-full bg-gray-100 flex items-center justify-center mb-4">
+            <Package className="w-6 h-6 text-gray-400" />
+          </div>
           <p className="text-sm font-medium text-gray-700">No batches yet.</p>
           <p className="text-sm text-gray-500 mt-1">
-            Go to <Link to="/finance" className="text-red-700 hover:underline">Finance</Link> to create your first batch.
+            Go to <Link to="/finance" className="text-red-700 hover:underline">Finance</Link> to audit claims and create your first batch.
           </p>
         </div>
       ) : (
-        <div className="border border-gray-200 rounded bg-white overflow-hidden">
+        <div className="border border-gray-200 rounded-xl bg-white overflow-hidden">
           {/* Table header */}
-          <div className="grid grid-cols-[1fr_auto_auto_auto] gap-4 items-center px-5 py-2.5 bg-gray-50 border-b border-gray-200">
+          <div className="hidden md:grid grid-cols-[1fr_auto_auto_auto] gap-4 items-center px-5 py-2.5 bg-gray-50 border-b border-gray-200">
             <span className="text-[11px] font-semibold text-gray-500 uppercase tracking-wide">Batch</span>
             <span className="text-[11px] font-semibold text-gray-500 uppercase tracking-wide w-32">Created</span>
             <span className="text-[11px] font-semibold text-gray-500 uppercase tracking-wide w-28 text-center">Status</span>

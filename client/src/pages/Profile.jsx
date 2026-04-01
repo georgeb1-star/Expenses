@@ -3,6 +3,7 @@ import { useAuth } from '../context/AuthContext';
 import { Button } from '../components/ui/Button';
 import { Input } from '../components/ui/Input';
 import { Select } from '../components/ui/Select';
+import { AlertCircle, CheckCircle2 } from 'lucide-react';
 import api from '../api/client';
 
 export default function Profile() {
@@ -45,18 +46,28 @@ export default function Profile() {
         <p className="text-sm text-gray-500 mt-0.5">Update your name, department, and reporting manager.</p>
       </div>
 
-      <div className="bg-white border border-gray-200 rounded p-6">
+      <div className="bg-white border border-gray-200 rounded-xl p-6">
         <form onSubmit={handleSubmit} className="space-y-4">
-          {error && <p className="text-sm text-red-700 bg-red-50 p-3 rounded">{error}</p>}
-          {success && <p className="text-sm text-green-700 bg-green-50 p-3 rounded">Profile updated.</p>}
+          {error && (
+            <div className="flex items-start gap-2 text-sm text-red-700 bg-red-50 border border-red-200 px-3 py-2.5 rounded-lg">
+              <AlertCircle className="w-4 h-4 flex-shrink-0 mt-0.5" />
+              {error}
+            </div>
+          )}
+          {success && (
+            <div className="flex items-start gap-2 text-sm text-green-700 bg-green-50 border border-green-200 px-3 py-2.5 rounded-lg">
+              <CheckCircle2 className="w-4 h-4 flex-shrink-0 mt-0.5" />
+              Profile updated successfully.
+            </div>
+          )}
 
-          <div className="space-y-2">
-            <label className="text-sm font-medium text-gray-700">Full name</label>
+          <div className="space-y-1.5">
+            <label className="text-xs font-medium text-gray-700">Full name</label>
             <Input value={form.name} onChange={set('name')} required />
           </div>
 
-          <div className="space-y-2">
-            <label className="text-sm font-medium text-gray-700">Department</label>
+          <div className="space-y-1.5">
+            <label className="text-xs font-medium text-gray-700">Department</label>
             <Select value={form.department} onChange={set('department')}>
               <option value="">Select department…</option>
               {['Sales', 'IT', 'Operations', 'Management', 'Finance', 'HR', 'Marketing', 'Logistics', 'Customer Service', 'Other'].map((d) => (
@@ -66,8 +77,8 @@ export default function Profile() {
           </div>
 
           {user?.role === 'employee' && (
-            <div className="space-y-2">
-              <label className="text-sm font-medium text-gray-700">Reports to</label>
+            <div className="space-y-1.5">
+              <label className="text-xs font-medium text-gray-700">Reports to</label>
               <Select value={form.manager_id} onChange={set('manager_id')}>
                 <option value="">No manager assigned</option>
                 {managers.map((m) => (

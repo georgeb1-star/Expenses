@@ -1,10 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { Card, CardHeader, CardTitle, CardContent } from '../components/ui/Card';
 import { Button } from '../components/ui/Button';
 import { Input } from '../components/ui/Input';
 import { Select } from '../components/ui/Select';
+import { AlertCircle } from 'lucide-react';
 import api from '../api/client';
 
 export default function Register() {
@@ -40,49 +40,92 @@ export default function Register() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50">
-      <div className="w-full max-w-md">
-        <div className="text-center mb-8">
-          <h1 className="text-3xl font-bold text-primary">ExpenseFlow</h1>
+    <div className="min-h-screen flex flex-col md:flex-row">
+      {/* Brand panel */}
+      <div className="bg-red-800 md:w-[360px] md:flex-shrink-0 flex flex-col items-center justify-center px-10 py-12 md:py-0">
+        <div className="flex flex-col items-center text-center">
+          <img
+            src="/citipost-logo.png"
+            alt="Citipost"
+            className="h-14 w-auto mb-8 brightness-0 invert"
+            draggable={false}
+          />
+          <div className="w-10 h-px bg-white/30 mb-6" />
+          <h1 className="text-2xl font-semibold text-white leading-snug mb-3">
+            Expense Management
+          </h1>
+          <p className="text-sm text-red-200 leading-relaxed max-w-xs">
+            Create your account to start submitting and tracking expense claims.
+          </p>
         </div>
-        <Card>
-          <CardHeader><CardTitle>Create account</CardTitle></CardHeader>
-          <CardContent>
-            <form onSubmit={handleSubmit} className="space-y-4">
-              {error && <p className="text-sm text-destructive bg-destructive/10 p-3 rounded-md">{error}</p>}
-              <div className="space-y-2">
-                <label className="text-sm font-medium">Full name</label>
-                <Input value={form.name} onChange={set('name')} required placeholder="Jane Smith" />
+      </div>
+
+      {/* Form panel */}
+      <div className="flex-1 flex items-start justify-center bg-gray-50 px-6 py-12 overflow-y-auto">
+        <div className="w-full max-w-md">
+          <div className="mb-8">
+            <h2 className="text-xl font-semibold text-gray-900 mb-1">Create your account</h2>
+            <p className="text-sm text-gray-500">Fill in your details to get started</p>
+          </div>
+
+          <form onSubmit={handleSubmit} className="space-y-6">
+            {error && (
+              <div className="flex items-start gap-2 text-sm text-red-700 bg-red-50 border border-red-200 px-3 py-2.5 rounded-lg">
+                <AlertCircle className="w-4 h-4 flex-shrink-0 mt-0.5" />
+                {error}
               </div>
-              <div className="space-y-2">
-                <label className="text-sm font-medium">Email</label>
-                <Input type="email" value={form.email} onChange={set('email')} required />
-              </div>
-              <div className="space-y-2">
-                <label className="text-sm font-medium">Password</label>
-                <Input type="password" value={form.password} onChange={set('password')} required minLength={8} />
-              </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <label className="text-sm font-medium">Role</label>
-                  <Select value={form.role} onChange={set('role')}>
-                    <option value="employee">Employee</option>
-                    <option value="manager">Manager</option>
-                    <option value="processor">Processor</option>
-                  </Select>
+            )}
+
+            {/* Personal info */}
+            <div>
+              <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3">Personal information</p>
+              <div className="space-y-4">
+                <div className="space-y-1.5">
+                  <label className="text-xs font-medium text-gray-700">Full name</label>
+                  <Input value={form.name} onChange={set('name')} required placeholder="Jane Smith" className="h-10" />
                 </div>
-                <div className="space-y-2">
-                  <label className="text-sm font-medium">Employee ID</label>
-                  <Input value={form.employee_id} onChange={set('employee_id')} placeholder="EMP001" />
+                <div className="space-y-1.5">
+                  <label className="text-xs font-medium text-gray-700">Email address</label>
+                  <Input type="email" value={form.email} onChange={set('email')} required placeholder="jane@citipost.co.uk" className="h-10" />
+                </div>
+                <div className="space-y-1.5">
+                  <label className="text-xs font-medium text-gray-700">Password</label>
+                  <Input type="password" value={form.password} onChange={set('password')} required minLength={8} placeholder="At least 8 characters" className="h-10" />
                 </div>
               </div>
-              <div className="space-y-2">
-                <label className="text-sm font-medium">Department</label>
-                <Input value={form.department} onChange={set('department')} placeholder="Sales" />
+            </div>
+
+            {/* Work info */}
+            <div>
+              <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3">Work information</p>
+              <div className="space-y-4">
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-1.5">
+                    <label className="text-xs font-medium text-gray-700">Role</label>
+                    <Select value={form.role} onChange={set('role')}>
+                      <option value="employee">Employee</option>
+                      <option value="manager">Manager</option>
+                      <option value="processor">Processor</option>
+                    </Select>
+                  </div>
+                  <div className="space-y-1.5">
+                    <label className="text-xs font-medium text-gray-700">Employee ID</label>
+                    <Input value={form.employee_id} onChange={set('employee_id')} placeholder="EMP001" className="h-10" />
+                  </div>
+                </div>
+                <div className="space-y-1.5">
+                  <label className="text-xs font-medium text-gray-700">Department</label>
+                  <Input value={form.department} onChange={set('department')} placeholder="Sales" className="h-10" />
+                </div>
               </div>
-              {form.role === 'employee' && (
-                <div className="space-y-2">
-                  <label className="text-sm font-medium">Reports to *</label>
+            </div>
+
+            {/* Manager assignment */}
+            {form.role === 'employee' && (
+              <div>
+                <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3">Reporting line</p>
+                <div className="space-y-1.5">
+                  <label className="text-xs font-medium text-gray-700">Reports to <span className="text-red-600">*</span></label>
                   <Select value={form.manager_id} onChange={set('manager_id')} required>
                     <option value="">Select manager…</option>
                     {managers.map((m) => (
@@ -93,16 +136,25 @@ export default function Register() {
                     <p className="text-xs text-amber-600">No managers found. A manager account must be created first.</p>
                   )}
                 </div>
-              )}
-              <Button type="submit" className="w-full" disabled={loading}>
-                {loading ? 'Creating account…' : 'Create account'}
-              </Button>
-              <p className="text-sm text-center text-muted-foreground">
-                Already have an account? <Link to="/login" className="text-primary hover:underline">Sign in</Link>
-              </p>
-            </form>
-          </CardContent>
-        </Card>
+              </div>
+            )}
+
+            <Button type="submit" className="w-full h-11" disabled={loading}>
+              {loading ? 'Creating account…' : 'Create account'}
+            </Button>
+
+            <p className="text-sm text-center text-gray-500">
+              Already have an account?{' '}
+              <Link to="/login" className="text-red-700 hover:text-red-800 font-medium">
+                Sign in
+              </Link>
+            </p>
+          </form>
+
+          <p className="text-center text-xs text-gray-400 mt-8">
+            &copy; {new Date().getFullYear()} Citipost Ltd. All rights reserved.
+          </p>
+        </div>
       </div>
     </div>
   );

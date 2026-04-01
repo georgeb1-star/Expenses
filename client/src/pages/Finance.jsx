@@ -68,11 +68,12 @@ export default function Finance() {
         </div>
 
         {needsAudit.length === 0 ? (
-          <div className="flex items-center justify-center py-10 border border-dashed border-gray-200 rounded bg-white text-sm text-gray-400">
-            No claims waiting for audit
+          <div className="flex flex-col items-center justify-center py-10 bg-white border border-gray-200 rounded-xl text-center">
+            <ClipboardCheck className="w-8 h-8 text-gray-300 mb-2" />
+            <p className="text-sm text-gray-500">No claims waiting for audit</p>
           </div>
         ) : (
-          <div className="border border-gray-200 rounded bg-white overflow-hidden">
+          <div className="border border-gray-200 rounded-xl bg-white overflow-hidden">
             <div className="flex items-center gap-4 px-5 py-2.5 bg-gray-50 border-b border-gray-200">
               <span className="text-[11px] font-semibold text-gray-500 uppercase tracking-wide flex-1">Claim</span>
               <span className="text-[11px] font-semibold text-gray-500 uppercase tracking-wide w-36">Owner</span>
@@ -124,7 +125,7 @@ export default function Finance() {
         </div>
 
         {selected.length > 0 && (
-          <div className="border border-red-200 bg-red-50 rounded p-4">
+          <div className="border border-red-200 bg-red-50 rounded-xl p-4">
             <p className="text-sm font-medium text-red-900 mb-3">
               {selected.length} claim{selected.length !== 1 ? 's' : ''} selected
             </p>
@@ -157,11 +158,13 @@ export default function Finance() {
         )}
 
         {readyToBatch.length === 0 ? (
-          <div className="flex items-center justify-center py-10 border border-dashed border-gray-200 rounded bg-white text-sm text-gray-400">
-            No claims ready to batch — audit claims above first
+          <div className="flex flex-col items-center justify-center py-10 bg-white border border-gray-200 rounded-xl text-center">
+            <Package className="w-8 h-8 text-gray-300 mb-2" />
+            <p className="text-sm text-gray-500">No claims ready to batch</p>
+            <p className="text-xs text-gray-400 mt-1">Audit claims above to move them into the ready state</p>
           </div>
         ) : (
-          <div className="border border-gray-200 rounded bg-white overflow-hidden">
+          <div className="border border-gray-200 rounded-xl bg-white overflow-hidden">
             <div className="flex items-center gap-4 px-5 py-2.5 bg-gray-50 border-b border-gray-200">
               <input type="checkbox" checked={allSelected} onChange={toggleAll}
                 className="rounded border-gray-300 text-red-700 focus:ring-red-600" />

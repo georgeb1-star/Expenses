@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 import { claimsApi } from '../api';
 import { StatusBadge } from '../components/StatusBadge';
 import { formatDate, formatCurrency } from '../lib/utils';
-import { AlertCircle, ArrowRight, Clock } from 'lucide-react';
+import { AlertCircle, ArrowRight, Clock, ClipboardCheck } from 'lucide-react';
 
 function DaysWaitingBadge({ submittedAt }) {
   if (!submittedAt) return null;
@@ -46,12 +46,15 @@ export default function Approvals() {
           <div className="animate-spin rounded-full h-6 w-6 border-2 border-gray-300 border-t-red-700" />
         </div>
       ) : claims.length === 0 ? (
-        <div className="flex flex-col items-center justify-center py-16 text-center border border-gray-200 rounded bg-white">
+        <div className="flex flex-col items-center justify-center py-16 text-center bg-white border border-gray-200 rounded-xl">
+          <div className="w-12 h-12 rounded-full bg-gray-100 flex items-center justify-center mb-4">
+            <ClipboardCheck className="w-6 h-6 text-gray-400" />
+          </div>
           <p className="text-sm font-medium text-gray-700">No claims pending approval.</p>
-          <p className="text-sm text-gray-500 mt-1">You're all caught up.</p>
+          <p className="text-sm text-gray-500 mt-1">You're all caught up — nothing to review right now.</p>
         </div>
       ) : (
-        <div className="border border-gray-200 rounded bg-white overflow-hidden">
+        <div className="border border-gray-200 rounded-xl bg-white overflow-hidden">
           {/* Table header */}
           <div className="hidden md:grid grid-cols-[1fr_auto_auto_auto_auto_auto] gap-4 items-center px-5 py-2.5 bg-gray-50 border-b border-gray-200">
             <span className="text-[11px] font-semibold text-gray-500 uppercase tracking-wide">Claim</span>

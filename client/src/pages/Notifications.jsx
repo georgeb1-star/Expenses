@@ -16,11 +16,13 @@ export default function Notifications() {
   const markRead = async (id) => {
     await notificationsApi.markRead(id);
     setNotifications((prev) => prev.map((n) => n.id === id ? { ...n, read: true } : n));
+    window.dispatchEvent(new CustomEvent('notifications-cleared'));
   };
 
   const markAllRead = async () => {
     await notificationsApi.markAllRead();
     setNotifications((prev) => prev.map((n) => ({ ...n, read: true })));
+    window.dispatchEvent(new CustomEvent('notifications-cleared'));
   };
 
   const unread = notifications.filter((n) => !n.read);

@@ -18,14 +18,15 @@ export function Layout({ children }) {
   const [unread, setUnread] = useState(0);
 
   useEffect(() => {
-    const fetchUnread = () => {
-      notificationsApi.list().then((r) => {
-        setUnread(r.data.filter((n) => !n.read).length);
-      }).catch(() => {});
-    };
-    fetchUnread();
-    window.addEventListener('notifications-cleared', fetchUnread);
-    return () => window.removeEventListener('notifications-cleared', fetchUnread);
+    notificationsApi.list().then((r) => {
+      setUnread(r.data.filter((n) => !n.read).length);
+    }).catch(() => {});
+  }, []);
+
+  useEffect(() => {
+    const handler = (e) => setUnread(e.detail.unread);
+    window.addEventListener('notifications-cleared', handler);
+    return () => window.removeEventListener('notifications-cleared', handler);
   }, []);
 
   const handleLogout = () => { logout(); navigate('/login'); };

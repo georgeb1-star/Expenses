@@ -130,13 +130,18 @@ export default function ClaimDetail() {
 
   const handleSaveTemplate = async () => {
     if (!templateName.trim()) return;
+    const items = claim?.items ?? [];
+    if (!items.length) { setError('Add at least one item before saving a template.'); return; }
     setSavingTemplate(true);
+    setError('');
     try {
-      await templatesApi.create({ name: templateName.trim(), items: claim.items });
+      await templatesApi.create({ name: templateName.trim(), items });
       setTemplateSaved(true);
       setShowSaveTemplate(false);
       setTemplateName('');
       setTimeout(() => setTemplateSaved(false), 3000);
+    } catch (err) {
+      setError(err.response?.data?.error || 'Failed to save template — please try again.');
     } finally {
       setSavingTemplate(false);
     }

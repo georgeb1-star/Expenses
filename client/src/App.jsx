@@ -35,7 +35,7 @@ export default function App() {
 
           <Route path="/dashboard" element={<AppLayout><Dashboard /></AppLayout>} />
 
-          <Route path="/claims" element={<AppLayout roles={['employee', 'manager', 'admin']}><ClaimList /></AppLayout>} />
+          <Route path="/claims" element={<AppLayout roles={['employee', 'manager', 'processor', 'admin']}><ClaimList /></AppLayout>} />
           <Route path="/claims/:id" element={<AppLayout><ClaimDetail /></AppLayout>} />
 
           <Route path="/approvals" element={<AppLayout roles={['manager', 'admin']}><Approvals /></AppLayout>} />

@@ -122,7 +122,7 @@ router.post('/:id/approve-role', async (req, res) => {
 
   await db('notifications').insert({
     user_id: target.id,
-    message: `Your ${target.pending_role} role request has been approved. You now have ${target.pending_role} access.`,
+    message: `Your ${target.pending_role} role request has been approved. Please log out and log back in to activate your new access.`,
   });
 
   await emailService.roleApproved({ email: target.email, name: target.name, role: target.pending_role }).catch(() => {});

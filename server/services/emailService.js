@@ -90,7 +90,7 @@ module.exports = {
       `Your ${roleLabel} access has been approved`,
       `<p>Hi ${name},</p>
        <p>An administrator has approved your <strong>${roleLabel}</strong> role request. You now have full ${roleLabel} access.</p>
-       <p>Log in to get started.</p>
+       <p><strong>Please log out and log back in</strong> to activate your new role.</p>
        <p style="color:#888;font-size:12px">ExpenseFlow · Citipost</p>`
     );
   },

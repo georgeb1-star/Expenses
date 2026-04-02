@@ -1,10 +1,17 @@
 import React from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { Clock } from 'lucide-react';
 import { Button } from '../components/ui/Button';
 
 export default function PendingApproval() {
   const { user, logout } = useAuth();
+  const navigate = useNavigate();
+
+  const handleSignOut = () => {
+    logout();
+    navigate('/login');
+  };
 
   const roleLabel = user?.pending_role
     ? user.pending_role.charAt(0).toUpperCase() + user.pending_role.slice(1)
@@ -46,7 +53,7 @@ export default function PendingApproval() {
             </ul>
           </div>
 
-          <Button variant="outline" size="sm" onClick={logout} className="w-full">
+          <Button variant="outline" size="sm" onClick={handleSignOut} className="w-full">
             Sign out
           </Button>
         </div>

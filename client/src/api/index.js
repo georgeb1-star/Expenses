@@ -64,7 +64,7 @@ export const alertsApi = {
 
 // Notifications
 export const notificationsApi = {
-  list: () => api.get('/notifications'),
+  list: (params) => api.get('/notifications', { params }),
   markRead: (id) => api.put(`/notifications/${id}/read`),
   markAllRead: () => api.put('/notifications/read-all'),
 };
@@ -95,6 +95,8 @@ export const usersApi = {
   create: (data) => api.post('/users', data),
   update: (id, data) => api.patch(`/users/${id}`, data),
   delete: (id) => api.delete(`/users/${id}`),
+  approveRole: (id) => api.post(`/users/${id}/approve-role`),
+  denyRole: (id) => api.post(`/users/${id}/deny-role`),
 };
 
 // Templates

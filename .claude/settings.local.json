@@ -4,7 +4,19 @@
       "Skill(update-config)",
       "Bash(docker compose:*)",
       "Bash(docker exec:*)",
-      "Bash(curl:*)"
+      "Bash(curl:*)",
+      "Bash(gh repo:*)",
+      "Bash(gh issue:*)",
+      "Bash(gh pr:*)",
+      "Bash(git commit:*)",
+      "Bash(git add:*)",
+      "Bash(git push:*)",
+      "Bash(railway run:*)",
+      "Bash(npm install:*)",
+      "Bash(grep -E \"\\\\.js$\")",
+      "Bash(xargs grep:*)",
+      "Bash(grep -r \"pdf\\\\|PDF\\\\|pdfkit\\\\|jspdf\" /c/Users/GBunton/Documents/Expenses/ --include=*.json --include=*.js)",
+      "Bash(grep -r \"template\\\\|Template\" /c/Users/GBunton/Documents/Expenses/server/routes/ --include=*.js)"
     ]
   }
 }

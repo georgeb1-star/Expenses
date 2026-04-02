@@ -71,6 +71,42 @@ module.exports = {
     );
   },
 
+  async roleRequestPending({ name, email, requestedRole }) {
+    const roleLabel = requestedRole.charAt(0).toUpperCase() + requestedRole.slice(1);
+    await sendEmail(
+      email,
+      'Your account is pending approval',
+      `<p>Hi ${name},</p>
+       <p>Your account has been created and your request for <strong>${roleLabel}</strong> access is pending review by an administrator.</p>
+       <p>You'll receive an email once your role has been reviewed. In the meantime you can log in and wait for approval.</p>
+       <p style="color:#888;font-size:12px">ExpenseFlow · Citipost</p>`
+    );
+  },
+
+  async roleApproved({ email, name, role }) {
+    const roleLabel = role.charAt(0).toUpperCase() + role.slice(1);
+    await sendEmail(
+      email,
+      `Your ${roleLabel} access has been approved`,
+      `<p>Hi ${name},</p>
+       <p>An administrator has approved your <strong>${roleLabel}</strong> role request. You now have full ${roleLabel} access.</p>
+       <p>Log in to get started.</p>
+       <p style="color:#888;font-size:12px">ExpenseFlow · Citipost</p>`
+    );
+  },
+
+  async roleDenied({ email, name, role }) {
+    const roleLabel = role.charAt(0).toUpperCase() + role.slice(1);
+    await sendEmail(
+      email,
+      `Update on your ${roleLabel} access request`,
+      `<p>Hi ${name},</p>
+       <p>An administrator has reviewed your <strong>${roleLabel}</strong> role request and it was not approved at this time.</p>
+       <p>Your account remains active with standard employee access. If you believe this is incorrect, please contact your administrator.</p>
+       <p style="color:#888;font-size:12px">ExpenseFlow · Citipost</p>`
+    );
+  },
+
   async auditRejected({ employeeEmail, employeeName, managerEmail, managerName, claimTitle, claimId, comment }) {
     await sendEmail(
       managerEmail,

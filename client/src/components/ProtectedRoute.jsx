@@ -14,6 +14,7 @@ export function ProtectedRoute({ children, roles }) {
   }
 
   if (!user) return <Navigate to="/login" replace />;
+  if (user.pending_role) return <Navigate to="/pending-approval" replace />;
   if (roles && !roles.includes(user.role)) return <Navigate to="/dashboard" replace />;
 
   return children;

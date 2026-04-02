@@ -5,7 +5,7 @@ import api from '../api/client';
 import { Button } from '../components/ui/Button';
 import { Input } from '../components/ui/Input';
 import { formatDate } from '../lib/utils';
-import { Plus, Search, X, Eye, EyeOff, UserCog, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Plus, Search, X, Eye, EyeOff, UserCog, ChevronLeft, ChevronRight, Clock, Check, XCircle } from 'lucide-react';
 
 const ROLES = ['employee', 'manager', 'processor', 'admin'];
 
@@ -237,6 +237,25 @@ export default function Users() {
     }
   };
 
+  const handleApproveRole = async (u) => {
+    try {
+      await usersApi.approveRole(u.id);
+      fetchUsers();
+    } catch (err) {
+      setDeleteError(err.response?.data?.error || 'Failed to approve role');
+    }
+  };
+
+  const handleDenyRole = async (u) => {
+    if (!window.confirm(`Deny ${u.name}'s ${u.pending_role} role request? They will remain as an employee.`)) return;
+    try {
+      await usersApi.denyRole(u.id);
+      fetchUsers();
+    } catch (err) {
+      setDeleteError(err.response?.data?.error || 'Failed to deny role');
+    }
+  };
+
   const openEdit = (u) => { setEditingUser(u); setShowModal(true); };
   const openCreate = () => { setEditingUser(null); setShowModal(true); };
 
@@ -274,6 +293,19 @@ export default function Users() {
       {deleteError && (
         <div className="px-4 py-3 bg-red-50 border border-red-200 rounded text-sm text-red-700">
           {deleteError}
+        </div>
+      )}
+
+      {/* Pending role approvals banner */}
+      {users.some((u) => u.pending_role) && (
+        <div className="flex items-start gap-3 px-4 py-3 bg-amber-50 border border-amber-200 rounded-lg">
+          <Clock className="w-4 h-4 text-amber-600 flex-shrink-0 mt-0.5" />
+          <div>
+            <p className="text-sm font-medium text-amber-800">
+              {users.filter((u) => u.pending_role).length} account{users.filter((u) => u.pending_role).length !== 1 ? 's' : ''} awaiting role approval
+            </p>
+            <p className="text-xs text-amber-700 mt-0.5">Users registered with elevated roles are shown below with an Approve / Deny action.</p>
+          </div>
         </div>
       )}
 
@@ -319,21 +351,29 @@ export default function Users() {
                 </tr>
               ) : (
                 users.map((u) => (
-                  <tr key={u.id} className="hover:bg-gray-50 transition-colors">
+                  <tr key={u.id} className={`transition-colors ${u.pending_role ? 'bg-amber-50/60 hover:bg-amber-50' : 'hover:bg-gray-50'}`}>
                     <td className="px-4 py-3">
                       <div className="flex items-center gap-2.5">
-                        <div className="w-7 h-7 rounded-full bg-red-100 flex items-center justify-center flex-shrink-0">
-                          <span className="text-[10px] font-semibold text-red-700">
+                        <div className={`w-7 h-7 rounded-full flex items-center justify-center flex-shrink-0 ${u.pending_role ? 'bg-amber-100' : 'bg-red-100'}`}>
+                          <span className={`text-[10px] font-semibold ${u.pending_role ? 'text-amber-700' : 'text-red-700'}`}>
                             {u.name.split(' ').map((n) => n[0]).slice(0, 2).join('').toUpperCase()}
                           </span>
                         </div>
                         <div className="min-w-0">
-                          <p className="font-medium text-gray-900 truncate">
-                            {u.name}
-                            {u.id === currentUser.id && (
-                              <span className="ml-1.5 text-[10px] font-normal text-gray-400">(you)</span>
+                          <div className="flex items-center gap-1.5 flex-wrap">
+                            <p className="font-medium text-gray-900 truncate">
+                              {u.name}
+                              {u.id === currentUser.id && (
+                                <span className="ml-1.5 text-[10px] font-normal text-gray-400">(you)</span>
+                              )}
+                            </p>
+                            {u.pending_role && (
+                              <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-medium bg-amber-100 text-amber-700">
+                                <Clock className="w-2.5 h-2.5" />
+                                Pending {u.pending_role}
+                              </span>
                             )}
-                          </p>
+                          </div>
                           <p className="text-xs text-gray-500 truncate">{u.email}</p>
                         </div>
                       </div>
@@ -344,19 +384,40 @@ export default function Users() {
                     <td className="px-4 py-3 text-gray-500 hidden lg:table-cell">{formatDate(u.created_at)}</td>
                     <td className="px-4 py-3">
                       <div className="flex items-center justify-end gap-2">
-                        <button
-                          onClick={() => openEdit(u)}
-                          className="text-xs text-red-700 hover:text-red-800 font-medium"
-                        >
-                          Edit
-                        </button>
-                        {u.id !== currentUser.id && (
-                          <button
-                            onClick={() => handleDelete(u)}
-                            className="text-xs text-gray-400 hover:text-red-600 font-medium transition-colors"
-                          >
-                            Remove
-                          </button>
+                        {u.pending_role ? (
+                          <>
+                            <button
+                              onClick={() => handleApproveRole(u)}
+                              className="inline-flex items-center gap-1 text-xs text-teal-700 hover:text-teal-800 font-medium"
+                            >
+                              <Check className="w-3.5 h-3.5" />
+                              Approve
+                            </button>
+                            <button
+                              onClick={() => handleDenyRole(u)}
+                              className="inline-flex items-center gap-1 text-xs text-gray-400 hover:text-red-600 font-medium transition-colors"
+                            >
+                              <XCircle className="w-3.5 h-3.5" />
+                              Deny
+                            </button>
+                          </>
+                        ) : (
+                          <>
+                            <button
+                              onClick={() => openEdit(u)}
+                              className="text-xs text-red-700 hover:text-red-800 font-medium"
+                            >
+                              Edit
+                            </button>
+                            {u.id !== currentUser.id && (
+                              <button
+                                onClick={() => handleDelete(u)}
+                                className="text-xs text-gray-400 hover:text-red-600 font-medium transition-colors"
+                              >
+                                Remove
+                              </button>
+                            )}
+                          </>
                         )}
                       </div>
                     </td>

@@ -25,7 +25,7 @@ router.get('/managers', async (req, res) => {
 
 // POST /api/auth/register
 router.post('/register', async (req, res) => {
-  const { name, email, password, department, employee_id, manager_id } = req.body;
+  const { name, email, password, department, employee_id, manager_id, role: requestedRole } = req.body;
   if (!name || !email || !password) {
     return res.status(400).json({ error: 'name, email and password are required' });
   }
@@ -35,8 +35,10 @@ router.post('/register', async (req, res) => {
   const existing = await db('users').where({ email }).first();
   if (existing) return res.status(409).json({ error: 'Email already registered' });
 
-  // Roles are assigned by admins — self-registration always creates an employee
+  // Elevated roles require admin approval — account is created as employee with pending_role set
+  const ELEVATED_ROLES = ['manager', 'processor'];
   const role = 'employee';
+  const pending_role = ELEVATED_ROLES.includes(requestedRole) ? requestedRole : null;
 
   if (manager_id) {
     const mgr = await db('users').where({ id: manager_id }).whereIn('role', ['manager', 'admin']).first();
@@ -45,8 +47,23 @@ router.post('/register', async (req, res) => {
 
   const password_hash = await bcrypt.hash(password, 10);
   const [user] = await db('users')
-    .insert({ name, email, password_hash, role, department, employee_id, manager_id: manager_id || null })
-    .returning(['id', 'name', 'email', 'role', 'department', 'employee_id', 'manager_id']);
+    .insert({ name, email, password_hash, role, department, employee_id, manager_id: manager_id || null, pending_role })
+    .returning(['id', 'name', 'email', 'role', 'pending_role', 'department', 'employee_id', 'manager_id']);
+
+  // Notify all admins if this account needs role approval
+  if (pending_role) {
+    const admins = await db('users').where({ role: 'admin' }).select('id');
+    const roleLabel = pending_role.charAt(0).toUpperCase() + pending_role.slice(1);
+    if (admins.length) {
+      await db('notifications').insert(
+        admins.map((a) => ({
+          user_id: a.id,
+          message: `New ${roleLabel} registration requires approval: ${name} (${email})`,
+        }))
+      );
+    }
+    await emailService.roleRequestPending({ name, email, requestedRole: pending_role }).catch(() => {});
+  }
 
   res.status(201).json({ token: signToken(user), user });
 });
@@ -70,7 +87,7 @@ router.post('/login', async (req, res) => {
 router.get('/me', authenticate, async (req, res) => {
   const user = await db('users')
     .where({ id: req.user.id })
-    .select('id', 'name', 'email', 'role', 'department', 'employee_id', 'manager_id', 'created_at')
+    .select('id', 'name', 'email', 'role', 'pending_role', 'department', 'employee_id', 'manager_id', 'created_at')
     .first();
   if (!user) return res.status(404).json({ error: 'User not found' });
   res.json(user);

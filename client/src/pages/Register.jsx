@@ -4,7 +4,7 @@ import { useAuth } from '../context/AuthContext';
 import { Button } from '../components/ui/Button';
 import { Input } from '../components/ui/Input';
 import { Select } from '../components/ui/Select';
-import { AlertCircle } from 'lucide-react';
+import { AlertCircle, Clock } from 'lucide-react';
 import api from '../api/client';
 
 export default function Register() {
@@ -25,13 +25,13 @@ export default function Register() {
     e.preventDefault();
     setError('');
     if (form.role === 'employee' && !form.manager_id) {
-      setError('Employees must select a manager.');
+      setError('Please select your reporting manager.');
       return;
     }
     setLoading(true);
     try {
-      await register({ ...form, manager_id: form.manager_id || null });
-      navigate('/dashboard');
+      const user = await register({ ...form, manager_id: form.manager_id || null });
+      navigate(user.pending_role ? '/pending-approval' : '/dashboard');
     } catch (err) {
       setError(err.response?.data?.error || 'Registration failed');
     } finally {
@@ -120,6 +120,16 @@ export default function Register() {
                 </div>
               </div>
             </div>
+
+            {/* Pending approval notice for elevated roles */}
+            {(form.role === 'manager' || form.role === 'processor') && (
+              <div className="flex items-start gap-2 text-sm text-amber-700 bg-amber-50 border border-amber-200 px-3 py-2.5 rounded-lg">
+                <Clock className="w-4 h-4 flex-shrink-0 mt-0.5" />
+                <span>
+                  <strong>{form.role.charAt(0).toUpperCase() + form.role.slice(1)}</strong> accounts require admin approval before you can access the system. You'll be notified by email once reviewed.
+                </span>
+              </div>
+            )}
 
             {/* Manager assignment */}
             {form.role === 'employee' && (

@@ -3,6 +3,7 @@ const bcrypt = require('bcryptjs');
 const db = require('../db/connection');
 const authenticate = require('../middleware/auth');
 const allow = require('../middleware/rbac');
+const emailService = require('../services/emailService');
 
 router.use(authenticate, allow('admin'));
 
@@ -17,11 +18,11 @@ router.get('/', async (req, res) => {
   let q = db('users')
     .leftJoin('users as mgr', 'users.manager_id', 'mgr.id')
     .select(
-      'users.id', 'users.name', 'users.email', 'users.role',
+      'users.id', 'users.name', 'users.email', 'users.role', 'users.pending_role',
       'users.department', 'users.employee_id', 'users.manager_id',
       'users.created_at', 'mgr.name as manager_name'
     )
-    .orderBy('users.name', 'asc');
+    .orderByRaw('users.pending_role IS NULL ASC, users.name ASC');
 
   if (search) {
     q = q.where((b) => {
@@ -104,6 +105,49 @@ router.patch('/:id', async (req, res) => {
     .where({ id: req.params.id })
     .update({ ...updates, updated_at: db.fn.now() })
     .returning(['id', 'name', 'email', 'role', 'department', 'employee_id', 'manager_id', 'created_at']);
+
+  res.json(user);
+});
+
+// POST /api/users/:id/approve-role
+router.post('/:id/approve-role', async (req, res) => {
+  const target = await db('users').where({ id: req.params.id }).first();
+  if (!target) return res.status(404).json({ error: 'User not found' });
+  if (!target.pending_role) return res.status(422).json({ error: 'No pending role request' });
+
+  const [user] = await db('users')
+    .where({ id: req.params.id })
+    .update({ role: target.pending_role, pending_role: null, updated_at: db.fn.now() })
+    .returning(['id', 'name', 'email', 'role', 'pending_role']);
+
+  await db('notifications').insert({
+    user_id: target.id,
+    message: `Your ${target.pending_role} role request has been approved. You now have ${target.pending_role} access.`,
+  });
+
+  await emailService.roleApproved({ email: target.email, name: target.name, role: target.pending_role }).catch(() => {});
+
+  res.json(user);
+});
+
+// POST /api/users/:id/deny-role
+router.post('/:id/deny-role', async (req, res) => {
+  const target = await db('users').where({ id: req.params.id }).first();
+  if (!target) return res.status(404).json({ error: 'User not found' });
+  if (!target.pending_role) return res.status(422).json({ error: 'No pending role request' });
+
+  const deniedRole = target.pending_role;
+  const [user] = await db('users')
+    .where({ id: req.params.id })
+    .update({ pending_role: null, updated_at: db.fn.now() })
+    .returning(['id', 'name', 'email', 'role', 'pending_role']);
+
+  await db('notifications').insert({
+    user_id: target.id,
+    message: `Your ${deniedRole} role request was not approved. Your account has been set to employee access.`,
+  });
+
+  await emailService.roleDenied({ email: target.email, name: target.name, role: deniedRole }).catch(() => {});
 
   res.json(user);
 });

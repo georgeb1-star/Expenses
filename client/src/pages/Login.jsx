@@ -121,6 +121,7 @@ export default function Login() {
               <p>employee@example.com</p>
               <p>manager@example.com</p>
               <p>processor@example.com</p>
+              <p>admin@example.com</p>
             </div>
             <p className="mt-2 text-gray-400">Password: <code className="text-gray-500">password</code></p>
           </div>

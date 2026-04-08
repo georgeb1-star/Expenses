@@ -119,15 +119,8 @@ exports.seed = async function (knex) {
     if (status !== 'draft') {
       await knex('audit_logs').insert({
         claim_id: claim.id, user_id: user.id, action: 'submit',
-        details: JSON.stringify({ from: 'draft', to: 'submitted' }),
+        details: JSON.stringify({ from: 'draft', to: 'manager_review' }),
         created_at: d(daysAgo, 10, 15),
-      });
-    }
-    if (['manager_review','approved','audit','processing','exported'].includes(status) && mgr) {
-      await knex('audit_logs').insert({
-        claim_id: claim.id, user_id: mgr, action: 'manager_review',
-        details: JSON.stringify({ from: 'submitted', to: 'manager_review' }),
-        created_at: d(daysAgo, 11, 0),
       });
     }
     if (['approved','audit','processing','exported'].includes(status) && mgr) {
@@ -176,7 +169,7 @@ exports.seed = async function (knex) {
       await knex('notifications').insert({
         user_id: user.id,
         claim_id: claim.id,
-        message: `Your claim "${title}" has been ${status === 'submitted' ? 'submitted' : status === 'manager_review' ? 'picked up for review' : status}.`,
+        message: `Your claim "${title}" has been ${status === 'manager_review' ? 'submitted for review' : status}.`,
         read: ['exported','processing','audit'].includes(status),
         created_at: d(daysAgo, 10, 20),
       });
@@ -386,11 +379,11 @@ exports.seed = async function (knex) {
   });
 
   // ══════════════════════════════════════════════════════════════════
-  //  SUBMITTED  (not yet picked up by manager)
+  //  MANAGER REVIEW  (awaiting manager action)
   // ══════════════════════════════════════════════════════════════════
 
   await createClaim({
-    user: emma, title: 'Keyboard and peripherals', status: 'submitted', daysAgo: 0,
+    user: emma, title: 'Keyboard and peripherals', status: 'manager_review', daysAgo: 0,
     items: [
       { expense_type: 'equipment', supplier: 'Apple Store', date: dateOnly(1), amount: 199.00, vat: 33.17, business_purpose: 'Magic Keyboard with Touch ID for dev workstation' },
       { expense_type: 'equipment', supplier: 'Amazon', date: dateOnly(1), amount: 49.99, vat: 8.33, business_purpose: 'USB-C hub for laptop docking' },
@@ -398,7 +391,7 @@ exports.seed = async function (knex) {
   });
 
   await createClaim({
-    user: sam, title: 'Warehouse safety boots', status: 'submitted', daysAgo: 0,
+    user: sam, title: 'Warehouse safety boots', status: 'manager_review', daysAgo: 0,
     items: [
       { expense_type: 'equipment', supplier: 'Screwfix', date: dateOnly(1), amount: 42.99, vat: 7.17, business_purpose: 'Safety boots — required PPE for warehouse visits' },
     ],

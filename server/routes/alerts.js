@@ -30,19 +30,23 @@ nested.get('/', async (req, res) => {
 const standalone = express.Router();
 standalone.use(authenticate);
 
-standalone.put('/:id/resolve', async (req, res) => {
-  const alert = await db('alerts').where({ id: req.params.id }).first();
-  if (!alert) return res.status(404).json({ error: 'Alert not found' });
+standalone.put('/:id/resolve', async (req, res, next) => {
+  try {
+    const alert = await db('alerts').where({ id: req.params.id }).first();
+    if (!alert) return res.status(404).json({ error: 'Alert not found' });
 
-  const claim = await db('claims').where({ id: alert.claim_id }).first();
-  if (claim.user_id !== req.user.id) return res.status(403).json({ error: 'Forbidden' });
+    const claim = await db('claims').where({ id: alert.claim_id }).first();
+    if (claim.user_id !== req.user.id) return res.status(403).json({ error: 'Forbidden' });
 
-  const [updated] = await db('alerts')
-    .where({ id: alert.id })
-    .update({ resolved: true, resolved_at: db.fn.now() })
-    .returning('*');
+    const [updated] = await db('alerts')
+      .where({ id: alert.id })
+      .update({ resolved: true, resolved_at: db.fn.now() })
+      .returning('*');
 
-  res.json(updated);
+    res.json(updated);
+  } catch (err) {
+    next(err);
+  }
 });
 
 module.exports = { nested, standalone };

@@ -124,7 +124,7 @@ itemRouter.post('/', upload.single('file'), async (req, res) => {
 
   const [receipt] = await db('receipts').insert({
     claim_item_id: item.id,
-    filename: req.file.originalname,
+    filename: req.file.originalname.replace(/[^a-z0-9._-]/gi, '_'),
     mime_type: req.file.mimetype,
     data: req.file.buffer,
   }).returning(['id', 'claim_item_id', 'filename', 'mime_type', 'uploaded_at']);

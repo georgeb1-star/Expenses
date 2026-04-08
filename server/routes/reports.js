@@ -92,9 +92,9 @@ router.get('/team-summary', async (req, res) => {
   }
   const managerId = req.user.id;
 
-  // Pending claims (submitted/manager_review assigned to this manager)
+  // Pending claims (manager_review assigned to this manager)
   const pendingClaims = await db('claims')
-    .whereIn('status', ['submitted', 'manager_review'])
+    .where('status', 'manager_review')
     .where('manager_id', managerId);
   const pendingIds = pendingClaims.map((c) => c.id);
 
@@ -224,7 +224,7 @@ router.get('/employee-summary', async (req, res) => {
   // Total pending (in-flight claims not yet processor-approved)
   const [pendingRow] = await db('claim_items')
     .join('claims', 'claim_items.claim_id', 'claims.id')
-    .whereIn('claims.status', ['submitted', 'manager_review', 'auditing'])
+    .whereIn('claims.status', ['manager_review', 'approved', 'audit'])
     .where('claims.user_id', userId)
     .sum({ total: db.raw('COALESCE(claim_items.amount, claim_items.reimbursement_amount, 0)') });
 

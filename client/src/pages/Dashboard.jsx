@@ -41,7 +41,7 @@ export default function Dashboard() {
   }, [user.role]);
 
   const draft = claims.filter((c) => c.status === 'draft');
-  const inProgress = claims.filter((c) => ['submitted', 'manager_review', 'audit', 'processing'].includes(c.status));
+  const inProgress = claims.filter((c) => ['manager_review', 'audit', 'processing'].includes(c.status));
   const approved = claims.filter((c) => c.status === 'approved');
   const exported = claims.filter((c) => c.status === 'exported');
 

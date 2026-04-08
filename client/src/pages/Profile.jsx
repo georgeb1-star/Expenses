@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
+import { authApi } from '../api';
 import { Button } from '../components/ui/Button';
 import { Input } from '../components/ui/Input';
 import { Select } from '../components/ui/Select';
-import { AlertCircle, CheckCircle2 } from 'lucide-react';
+import { AlertCircle, CheckCircle2, Lock } from 'lucide-react';
 import api from '../api/client';
 
 export default function Profile() {
@@ -14,6 +15,12 @@ export default function Profile() {
   const [success, setSuccess] = useState(false);
   const [error, setError] = useState('');
 
+  // Password change state
+  const [pwForm, setPwForm] = useState({ currentPassword: '', newPassword: '', confirmPassword: '' });
+  const [pwSaving, setPwSaving] = useState(false);
+  const [pwSuccess, setPwSuccess] = useState(false);
+  const [pwError, setPwError] = useState('');
+
   useEffect(() => {
     if (user) {
       setForm({ name: user.name || '', department: user.department || '', manager_id: user.manager_id || '' });
@@ -22,6 +29,32 @@ export default function Profile() {
   }, [user]);
 
   const set = (field) => (e) => setForm({ ...form, [field]: e.target.value });
+
+  const setPw = (field) => (e) => setPwForm({ ...pwForm, [field]: e.target.value });
+
+  const handlePasswordChange = async (e) => {
+    e.preventDefault();
+    setPwError('');
+    setPwSuccess(false);
+    if (pwForm.newPassword !== pwForm.confirmPassword) {
+      setPwError('New passwords do not match');
+      return;
+    }
+    if (pwForm.newPassword.length < 8) {
+      setPwError('New password must be at least 8 characters');
+      return;
+    }
+    setPwSaving(true);
+    try {
+      await authApi.changePassword({ currentPassword: pwForm.currentPassword, newPassword: pwForm.newPassword });
+      setPwSuccess(true);
+      setPwForm({ currentPassword: '', newPassword: '', confirmPassword: '' });
+    } catch (err) {
+      setPwError(err.response?.data?.error || 'Failed to change password');
+    } finally {
+      setPwSaving(false);
+    }
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -93,6 +126,50 @@ export default function Profile() {
 
           <div className="pt-1">
             <Button type="submit" disabled={saving}>{saving ? 'Saving…' : 'Save changes'}</Button>
+          </div>
+        </form>
+      </div>
+
+      {/* Change Password */}
+      <div>
+        <h2 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
+          <Lock className="w-4 h-4" /> Change Password
+        </h2>
+        <p className="text-sm text-gray-500 mt-0.5">Update your password. Must be at least 8 characters.</p>
+      </div>
+
+      <div className="bg-white border border-gray-200 rounded-xl p-6">
+        <form onSubmit={handlePasswordChange} className="space-y-4">
+          {pwError && (
+            <div className="flex items-start gap-2 text-sm text-red-700 bg-red-50 border border-red-200 px-3 py-2.5 rounded-lg">
+              <AlertCircle className="w-4 h-4 flex-shrink-0 mt-0.5" />
+              {pwError}
+            </div>
+          )}
+          {pwSuccess && (
+            <div className="flex items-start gap-2 text-sm text-green-700 bg-green-50 border border-green-200 px-3 py-2.5 rounded-lg">
+              <CheckCircle2 className="w-4 h-4 flex-shrink-0 mt-0.5" />
+              Password changed successfully.
+            </div>
+          )}
+
+          <div className="space-y-1.5">
+            <label className="text-xs font-medium text-gray-700">Current password</label>
+            <Input type="password" value={pwForm.currentPassword} onChange={setPw('currentPassword')} required />
+          </div>
+
+          <div className="space-y-1.5">
+            <label className="text-xs font-medium text-gray-700">New password</label>
+            <Input type="password" value={pwForm.newPassword} onChange={setPw('newPassword')} required minLength={8} />
+          </div>
+
+          <div className="space-y-1.5">
+            <label className="text-xs font-medium text-gray-700">Confirm new password</label>
+            <Input type="password" value={pwForm.confirmPassword} onChange={setPw('confirmPassword')} required minLength={8} />
+          </div>
+
+          <div className="pt-1">
+            <Button type="submit" disabled={pwSaving}>{pwSaving ? 'Changing…' : 'Change password'}</Button>
           </div>
         </form>
       </div>

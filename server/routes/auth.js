@@ -117,6 +117,26 @@ router.patch('/me', authenticate, async (req, res) => {
   res.json(user);
 });
 
+// POST /api/auth/change-password — authenticated password change
+router.post('/change-password', authenticate, async (req, res) => {
+  const { currentPassword, newPassword } = req.body;
+  if (!currentPassword || !newPassword) {
+    return res.status(400).json({ error: 'Current password and new password are required' });
+  }
+  if (newPassword.length < 8) {
+    return res.status(400).json({ error: 'New password must be at least 8 characters' });
+  }
+
+  const user = await db('users').where({ id: req.user.id }).first();
+  const valid = await bcrypt.compare(currentPassword, user.password_hash);
+  if (!valid) return res.status(401).json({ error: 'Current password is incorrect' });
+
+  const password_hash = await bcrypt.hash(newPassword, 10);
+  await db('users').where({ id: user.id }).update({ password_hash });
+
+  res.json({ message: 'Password changed successfully.' });
+});
+
 // POST /api/auth/forgot-password
 router.post('/forgot-password', async (req, res) => {
   const { email } = req.body;

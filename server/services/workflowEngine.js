@@ -1,11 +1,10 @@
 const db = require('../db/connection');
 
 const TRANSITIONS = {
-  draft: { submit: 'submitted' },
-  submitted: { manager_review: 'manager_review' },
+  draft: { submit: 'manager_review' },
   manager_review: { approve: 'approved', reject: 'draft' },
   approved: { audit: 'audit' },
-  audit: { audit_approve: 'processing', audit_reject: 'draft' },
+  audit: { audit_approve: 'processing', audit_reject: 'approved' },
   processing: { export: 'exported' },
 };
 

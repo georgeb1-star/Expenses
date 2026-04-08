@@ -12,7 +12,6 @@ import { Plus, Search, AlertCircle, ReceiptText, ChevronRight, ChevronLeft } fro
 const STATUS_OPTIONS = [
   { value: '', label: 'All statuses' },
   { value: 'draft', label: 'Draft' },
-  { value: 'submitted', label: 'Submitted' },
   { value: 'manager_review', label: 'Manager Review' },
   { value: 'approved', label: 'Approved' },
   { value: 'audit', label: 'Audit' },

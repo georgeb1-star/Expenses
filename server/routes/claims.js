@@ -30,7 +30,7 @@ router.get('/', async (req, res) => {
     query = query.where((q) => {
       q.where('claims.manager_id', userId)
         .orWhereIn('claims.user_id', [...team, userId])
-        .orWhereIn('claims.status', ['submitted', 'manager_review']);
+        .orWhere('claims.status', 'manager_review');
     });
   }
   // processor / admin see all
@@ -220,20 +220,8 @@ router.post('/:id/submit', async (req, res, next) => {
 
   await db('claims').where({ id: claim.id }).update({ manager_id: managerId, updated_at: db.fn.now() });
 
-  // Transition directly to manager_review, recording the submission in the audit log
-  await db('claims').where({ id: claim.id }).update({
-    status: 'manager_review',
-    submitted_at: db.fn.now(),
-    updated_at: db.fn.now(),
-  });
-  await db('audit_logs').insert({
-    claim_id: claim.id,
-    user_id: req.user.id,
-    action: 'submit',
-    details: JSON.stringify({ from: 'draft', to: 'manager_review' }),
-  });
-
-  const updated = await db('claims').where({ id: claim.id }).first();
+  // Use workflow engine for proper state transition + audit log
+  const updated = await transition(claim.id, 'submit', req.user.id);
 
   await notify([managerId], claim.id, `New claim submitted by ${req.user.name}: "${claim.title}"`);
 
